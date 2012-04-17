@@ -85,6 +85,9 @@ static int scheme(void);
 static int rot(void);
 __u32 marker_val = 1;
 int fd_fb_ioctl = -1;
+
+#define WAVEFORM_MODE_INIT	0x0	/* init mode, turn the screen white */
+#define WAVEFORM_MODE_DU	0x1	/* fast 1bit update without flashing */
 #define WAVEFORM_MODE_GC16	0x2	/* High fidelity (flashing) */
 
 
