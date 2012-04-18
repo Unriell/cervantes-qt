@@ -81,7 +81,6 @@ QT_BEGIN_NAMESPACE
 extern int qws_client_id;
 static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
     int wait_for_complete, uint flags, int fullUpdates);
-static int scheme(void);
 static int rot(void);
 __u32 marker_val = 1;
 int fd_fb_ioctl = -1;
@@ -241,7 +240,8 @@ EInkFbScreen::EInkFbScreen(int display_id)
     setSupportsBlitInClients(true);
 #endif
     
-    useOnce = 0;
+    useModeOnce = 0;
+    useSchemeOnce = 0;
     currentMode = WAVEFORM_MODE_GC16;
     haltUpdates = 0;
     haltCount = 0;
@@ -291,7 +291,7 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 
     previousMode = currentMode;
     previousFlags = currentFlags;
-    useOnce = justOnce;
+    useModeOnce = justOnce;
     currentMode = newMode;
     currentFlags = newFlags;
 }
@@ -448,11 +448,17 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
         /* if we should only use the current mode once,
 	 * return it to its previous settings.
 	 */
-	if(useOnce) {
+	if(useModeOnce) {
 	  qDebug() << "going back to previous mode";
 	  currentMode = previousMode;
 	  currentFlags = previousFlags;
-	  useOnce = 0;
+	  useModeOnce = 0;
+	}
+
+	if(useSchemeOnce) {
+	  qDebug() << "going back to previous scheme";
+	  currentScheme = previousScheme;
+	  useSchemeOnce = 0;
 	}
     }
 }
@@ -498,8 +504,11 @@ bool EInkFbScreen::connect(const QString &displaySpec)
     const int len = 8; // "/dev/fbx"
     int m = displaySpec.indexOf(QLatin1String("/dev/fb"));
 
+    //rot();
+    
+    /* normally we want to use the queue and merge scheme */
+    setUpdateScheme(SCHEME_EINK_MERGE, false);
     rot();
-    scheme();
 
     QString dev;
     if (m > 0)
@@ -1645,7 +1654,16 @@ static int rot(void)
         int retval;
         struct fb_var_screeninfo screen_info;
 
+        memset(&screen_info, 0, sizeof(screen_info));
+
         fd_fb = open("/dev/fb0", O_RDWR, 0);
+
+        if (fd_fb != -1 && ioctl(fd_fb, FBIOGET_VSCREENINFO, &screen_info)) {
+            perror("QEInkFbScreen::connect");
+            qWarning("Error reading variable information");
+            return false;
+        }
+qDebug() << __func__ << " got rotation " << screen_info.rotate;
 
         printf("Rotating FB 270 degrees\n");
         screen_info.rotate = 3;
@@ -1667,7 +1685,8 @@ qDebug() << __func__ << "set rotation " << screen_info.rotate;
         return(0);
 }
 
-static int scheme(void)
+//static int scheme(void)
+void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
 {
     int fd_fb;
     int retval;
@@ -1675,15 +1694,30 @@ static int scheme(void)
  
     fd_fb = open("/dev/fb0", O_RDWR, 0);
 
-    scheme = UPDATE_SCHEME_QUEUE_AND_MERGE;
+    switch(newScheme) {
+      case SCHEME_EINK_QUEUE:
+	scheme = UPDATE_SCHEME_QUEUE;
+	break;
+      case SCHEME_EINK_MERGE:
+	scheme = UPDATE_SCHEME_QUEUE_AND_MERGE;
+	break;
+    }
+
+    qDebug() << "setting update scheme to " << scheme;
     retval = ioctl(fd_fb, MXCFB_SET_UPDATE_SCHEME, &scheme);
     if (retval < 0)
     {
             printf("Scheme failed\n");
-            return(-1);
+            return;
     }
+
+    previousScheme = currentScheme;
+    currentScheme = scheme;
+    useSchemeOnce = justOnce;
+
     close(fd_fb);
-    return(0);    
+    
+    return;    
 }
 
 QT_END_NAMESPACE

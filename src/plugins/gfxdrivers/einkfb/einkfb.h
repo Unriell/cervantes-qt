@@ -83,6 +83,10 @@ enum EInkFbModes {
     MODE_EINK_FASTEST
 };
 
+enum EInkFbUpdateSchemes {
+    SCHEME_EINK_QUEUE,
+    SCHEME_EINK_MERGE
+};
 
 class Q_GUI_EXPORT EInkFbScreen : public QScreen
 {
@@ -114,6 +118,7 @@ public:
     virtual void setWaveForm(int);
     
     virtual void setRefreshMode(int mode, bool justOnce);
+    virtual void setUpdateScheme(int newScheme, bool justOnce);
     virtual void blockUpdates();
     virtual void unblockUpdates();
 
@@ -132,11 +137,14 @@ protected:
     int haltCount;
     int currentMode;
     int currentFlags;
-    int useOnce;
+    int currentScheme;
+    int useModeOnce;
+    int useSchemeOnce;
     int fullUpdates;
 
     int previousMode;
     int previousFlags;
+    int previousScheme;
 
 private:
 
