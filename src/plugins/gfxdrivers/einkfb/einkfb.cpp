@@ -80,7 +80,7 @@ QT_BEGIN_NAMESPACE
 
 extern int qws_client_id;
 static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
-    int wait_for_complete, uint flags);
+    int wait_for_complete, uint flags, int fullUpdates);
 static int scheme(void);
 static int rot(void);
 __u32 marker_val = 1;
@@ -240,6 +240,11 @@ EInkFbScreen::EInkFbScreen(int display_id)
 #ifdef QT_QWS_CLIENTBLIT
     setSupportsBlitInClients(true);
 #endif
+    
+    useOnce = 0;
+    currentMode = WAVEFORM_MODE_GC16;
+    haltUpdates = 0;
+    haltCount = 0;
 }
 
 /*!
@@ -248,6 +253,57 @@ EInkFbScreen::EInkFbScreen(int display_id)
 
 EInkFbScreen::~EInkFbScreen()
 {
+}
+
+void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
+{
+    int newMode = -1;
+    int newFlags = 0;
+
+    qDebug() << "setRefreshMode" << __func__ << mode << justOnce;
+
+    haltUpdates = (mode == MODE_EINK_BLOCK);
+    fullUpdates = (mode == MODE_EINK_SAFE);
+
+    switch(mode) {
+      case MODE_EINK_BLOCK:
+	  /* we only block further updates
+	   * so there is nothing more to do
+	   */
+	  return;
+	  break;
+      case MODE_EINK_SAFE:
+	  newMode = WAVEFORM_MODE_GC16;
+	  break;
+      case MODE_EINK_QUICK:
+	  newMode = WAVEFORM_MODE_GC16;
+	  newFlags = 0;
+	  break;
+      case MODE_EINK_FASTEST:
+	  newMode = WAVEFORM_MODE_DU;
+	  newFlags = 0;
+	  break;
+      case MODE_EINK_AUTO:
+	  newMode = WAVEFORM_MODE_AUTO;
+	  newFlags = 0;
+          break;
+    }
+
+    previousMode = currentMode;
+    previousFlags = currentFlags;
+    useOnce = justOnce;
+    currentMode = newMode;
+    currentFlags = newFlags;
+}
+
+void EInkFbScreen::blockUpdates()
+{
+    haltCount++; 
+}
+
+void EInkFbScreen::unblockUpdates()
+{
+    haltCount--;
 }
 
 /*  ES:
@@ -273,13 +329,13 @@ void EInkFbScreen::setDirty(const QRect& rect)
    int h = rect.height();
 
  //  qDebug() << __func__ << w << ":" << h;
-
+/*
 if ((w == 1) && (h == 199))
     setWaveForm(1);
 if ((w == 2) && (h == 299))
     setWaveForm(2);
 if ((w == 3) && (h == 399))
-    setWaveForm(0);
+    setWaveForm(0);*/
 }
 
 void EInkFbScreen::exposeRegion(QRegion region, int changing)
@@ -384,14 +440,20 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
       //        qDebug() << __func__ << area.mode << ":" << area.cmd << "(" << x << y << w << h << ")";
     	}
 
-#ifdef FRANKLIN
-        if (ioctl(d_ptr->fd, S1D13521_LOAD_AREA, &area)) {
-            printf("Error: ioctl S1D13521_LOAD_AREA \n");
-        }
-#endif // FRANKLIN
-        //update_to_display(x, y, w, h, WAVEFORM_MODE_GC16, FALSE, 0);
-        update_to_display(x, y, w, h, WAVEFORM_MODE_AUTO, FALSE, 0);
-        //update_to_display(0, 0, 800, 600, WAVEFORM_MODE_AUTO, TRUE, 0);
+        if(!haltUpdates || haltCount > 0)
+          update_to_display(x, y, w, h, currentMode, FALSE, currentFlags, fullUpdates);
+	else
+	  qDebug() << "ignoring update";
+
+        /* if we should only use the current mode once,
+	 * return it to its previous settings.
+	 */
+	if(useOnce) {
+	  qDebug() << "going back to previous mode";
+	  currentMode = previousMode;
+	  currentFlags = previousFlags;
+	  useOnce = 0;
+	}
     }
 }
 
@@ -483,6 +545,7 @@ bool EInkFbScreen::connect(const QString &displaySpec)
         qWarning("Error reading variable information");
         return false;
     }
+qDebug() << __func__ << " got rotation " << vinfo.rotate;
 
 	/* setup the display controller for QT to use */
 	setupController();
@@ -904,7 +967,7 @@ bool EInkFbScreen::initDevice()
         free(cmap.transp);
     }
 
-    if (canaccel) {
+    if (canaccel && entryp) {
         *entryp=0;
         *lowest = mapsize;
         insert_entry(*entryp, *lowest, *lowest);  // dummy entry to mark start
@@ -1288,11 +1351,16 @@ void EInkFbScreen::setMode(int nw,int nh,int nd)
         perror("EInkFbScreen::setMode");
         qFatal("Error reading variable information in mode change");
     }
+qDebug() << __func__ << "got rotation " << vinfo.rotate;
 
     vinfo.xres=nw;
     vinfo.yres=nh;
 
     vinfo.bits_per_pixel=nd;
+    
+    /* insert hardcoded rotation for now */
+//    vinfo.rotate = FB_ROTATE_CCW;
+qDebug() << __func__ << " set rotation " << vinfo.rotate;
 
     if (ioctl(d_ptr->fd, FBIOPUT_VSCREENINFO, &vinfo)) {
         perror("EInkFbScreen::setMode");
@@ -1303,6 +1371,7 @@ void EInkFbScreen::setMode(int nw,int nh,int nd)
         perror("EInkFbScreen::setMode");
         qFatal("Error reading changed variable information in mode change");
     }
+qDebug() << __func__ << "got rotation " << vinfo.rotate;
 
     if (ioctl(d_ptr->fd, FBIOGET_FSCREENINFO, &finfo)) {
         perror("EInkFbScreen::setMode");
@@ -1522,12 +1591,12 @@ void EInkFbScreen::restoreController()
 }
 
 static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
-    int wait_for_complete, uint flags)
+    int wait_for_complete, uint flags, int fullUpdates)
 {
     struct mxcfb_update_data upd_data;
     int retval;
 
-    upd_data.update_mode = UPDATE_MODE_PARTIAL;
+    upd_data.update_mode = fullUpdates ? UPDATE_MODE_FULL : UPDATE_MODE_PARTIAL;
     upd_data.waveform_mode = wave_mode;
     upd_data.update_region.left = left;
     upd_data.update_region.width = width;
@@ -1546,6 +1615,10 @@ static __u32 update_to_display(int left, int top, int width, int height, int wav
     if (fd_fb_ioctl == -1)
     fd_fb_ioctl = open("/dev/fb0", O_RDWR, 0);
 
+qDebug("send update (x,y,w,h,waveform,mode) with (%d, %d, %d, %d, %d, %d)\n", 
+       upd_data.update_region.left, upd_data.update_region.top,
+       upd_data.update_region.width, upd_data.update_region.height,
+       wave_mode,  upd_data.update_mode);
     retval = ioctl(fd_fb_ioctl, MXCFB_SEND_UPDATE, &upd_data);
     while (retval < 0) {
         /* We have limited memory available for updates, so wait and
@@ -1555,6 +1628,7 @@ static __u32 update_to_display(int left, int top, int width, int height, int wav
     }
 
     if (wait_for_complete) {
+qDebug("waiting for update to complete\n");
         /* Wait for update to complete */
         retval = ioctl(fd_fb_ioctl, MXCFB_WAIT_FOR_UPDATE_COMPLETE, &upd_data.update_marker);
         if (retval < 0) {
@@ -1577,6 +1651,7 @@ static int rot(void)
         screen_info.rotate = 3;
         screen_info.bits_per_pixel = 16;
         screen_info.grayscale = 0;
+qDebug() << __func__ << "set rotation " << screen_info.rotate;
         retval = ioctl(fd_fb, FBIOPUT_VSCREENINFO, &screen_info);
         if (retval < 0)
         {

@@ -75,6 +75,15 @@ struct fb_var_screeninfo;
 struct fb_fix_screeninfo;
 class EInkFbScreenPrivate;
 
+enum EInkFbModes {
+    MODE_EINK_AUTO,
+    MODE_EINK_BLOCK,
+    MODE_EINK_SAFE,
+    MODE_EINK_QUICK,
+    MODE_EINK_FASTEST
+};
+
+
 class Q_GUI_EXPORT EInkFbScreen : public QScreen
 {
 public:
@@ -103,6 +112,10 @@ public:
     EInkFb_Shared * shared;
 
     virtual void setWaveForm(int);
+    
+    virtual void setRefreshMode(int mode, bool justOnce);
+    virtual void blockUpdates();
+    virtual void unblockUpdates();
 
 protected:
 
@@ -114,6 +127,16 @@ protected:
 
     static void clearCache(QScreen *instance, int);
     int m_waveform;
+
+    int haltUpdates;
+    int haltCount;
+    int currentMode;
+    int currentFlags;
+    int useOnce;
+    int fullUpdates;
+
+    int previousMode;
+    int previousFlags;
 
 private:
 
