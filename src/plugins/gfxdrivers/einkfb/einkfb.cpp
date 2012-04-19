@@ -89,7 +89,6 @@ int fd_fb_ioctl = -1;
 #define WAVEFORM_MODE_DU	0x1	/* fast 1bit update without flashing */
 #define WAVEFORM_MODE_GC16	0x2	/* High fidelity (flashing) */
 
-
 //#define DEBUG_CACHE
 
 class EInkFbScreenPrivate : public QObject
@@ -232,7 +231,7 @@ void EInkFbScreenPrivate::closeTty()
 */
 
 EInkFbScreen::EInkFbScreen(int display_id)
-    : QScreen(display_id, LinuxFBClass), d_ptr(new EInkFbScreenPrivate), m_waveform(3)
+    : QScreen(display_id, LinuxFBClass), d_ptr(new EInkFbScreenPrivate)
 {
     canaccel=false;
     clearCacheFunc = &clearCache;
@@ -243,6 +242,7 @@ EInkFbScreen::EInkFbScreen(int display_id)
     useModeOnce = 0;
     useSchemeOnce = 0;
     currentMode = WAVEFORM_MODE_GC16;
+    currentFlags = 0;
     haltUpdates = 0;
     haltCount = 0;
 }
@@ -277,15 +277,12 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 	  break;
       case MODE_EINK_QUICK:
 	  newMode = WAVEFORM_MODE_GC16;
-	  newFlags = 0;
 	  break;
       case MODE_EINK_FASTEST:
 	  newMode = WAVEFORM_MODE_DU;
-	  newFlags = 0;
 	  break;
       case MODE_EINK_AUTO:
 	  newMode = WAVEFORM_MODE_AUTO;
-	  newFlags = 0;
           break;
     }
 
@@ -299,149 +296,35 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 void EInkFbScreen::blockUpdates()
 {
     haltCount++; 
+    qDebug() << "block, haltcount now " << haltCount;
 }
 
 void EInkFbScreen::unblockUpdates()
 {
     haltCount--;
+    qDebug() << "unblock, haltcount now " << haltCount;
 }
 
-/*  ES:
-    Magic for waveform select;
-    0: auto;
-    1: GU mode;
-    2,3: GC mode;
-  */
-
-void EInkFbScreen::setWaveForm(int waveform)
-{
-    qDebug() << "EINKFB Command" << __func__ << waveform;
-    qDebug() << __func__ << waveform;
-    m_waveform = waveform;
-}
-
+/* FIXME: this can probably go away completely */
 void EInkFbScreen::setDirty(const QRect& rect)
 {
-
     QScreen::setDirty(rect);
-
-   int w = rect.width();
-   int h = rect.height();
-
- //  qDebug() << __func__ << w << ":" << h;
-/*
-if ((w == 1) && (h == 199))
-    setWaveForm(1);
-if ((w == 2) && (h == 299))
-    setWaveForm(2);
-if ((w == 3) && (h == 399))
-    setWaveForm(0);*/
 }
 
 void EInkFbScreen::exposeRegion(QRegion region, int changing)
 {
     QScreen::exposeRegion(region, changing);
+    bool waitComplete = true; /* true for testing */
 
     // Update region
 
     //=================================
     QVector<QRect> rv = region.rects();
-    static int refresh_counter = 0;
-    int refresh_limit = 5;
 
     for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
 
-        int x = i->x();
-        int y = i->y();
-        int h = i->height();
-        int w = i->width();
-
-        //qDebug() << "[DBG] " << __FILE__ << ", " << __FUNCTION__ << ", " << __LINE__;
-        //qDebug() << "[DBG]" << x << y << w << h;
-        if ((w == 1) && (h == 199))
-        {
-            qDebug() << "command mode 1";
-            return;
-        }
-        if ((w == 2) && (h == 299))
-        {
-            qDebug() << "command mode 2";
-           return;
-       }
-        if ((w == 3) && (h == 399))
-        {
-            qDebug() << "command mode 3";
-            return;
-        }
-      //  printf("ES : QSCREEN %dx%dx%d\n", QScreen::width(), QScreen::height(), QScreen::depth());
-        TLoadImageArea area;
-
-    	if ((h * w) == (800*600)) {
-         //     printf("ES:FULL PICTURE DETECTED\n");
-    	      area.cmd = UPD_FULL;
-    	      area.mode = WF_MODE_GC;
-    	      area.XStart = 0;
-    	      area.YStart = 0;
-    	      area.Width = w;
-    	      area.Height = h;
-    	} else {
-/////////////////////// special handler region:
-
-  			
-                if ((w * h) == (120 * 160) || (w * h) == (278 * 93) || (w * h) == (240 * 320)|| (w * h) == (250 * 350)|| (w * h) == (350 * 51)) {  //special define for demo
-    			area.cmd = UPD_PART_AREA;
-    			area.mode = WF_MODE_MU;
-
-                    }
-                else if((w * h) >= (600 *600)){
-                        if (refresh_counter > refresh_limit){
-                             area.cmd = UPD_FULL;
-                              area.mode = WF_MODE_GC;
-                             refresh_counter = 0;
-                      //       qDebug() << "<MagicUpdate>";
-                           }
-                        refresh_counter++;
-                    }else{
-    		
-/////////////////////// end of special region:
-
-       		if ((w * h) >= 490000) {		  //700*700
-                        area.cmd = UPD_FULL;
-                        area.mode = WF_MODE_GC;
-       		}else if ((w * h) >= 250000) {		  //500*500
-                        area.cmd = UPD_FULL_AREA;
-       			area.mode = WF_MODE_GC;
-                }else if ((w * h) >= 90000) {           // 300*300
-                        area.cmd = UPD_PART;
-    		   	area.mode = WF_MODE_GU;
-                }else if ((w * h) >= 40000) {           // 200*200
-                        area.cmd = UPD_PART;
-    			area.mode = WF_MODE_GU;      			   				
-                } else if ((w * h) >= (60*60)) {	//64*64
-    			area.cmd = UPD_PART_AREA;
-    			area.mode = WF_MODE_GU;
-    		} else {
-    			area.cmd = UPD_PART_AREA;
-    			area.mode = WF_MODE_MU;
-    		}
-                          }
-     	      area.XStart = x;
-      	      area.YStart = y;
-      	      area.Width = w;
-      	      area.Height = h;
-
-              if ((m_waveform == 1) || (m_waveform == 2) || (m_waveform == 3))
-              {
-                //qDebug() << "BW Mode";
-                //  area.mode = WF_MODE_MU;
-                  area.mode = m_waveform;
-              }
-
-      //        qDebug() << __func__ << area.mode << ":" << area.cmd << "(" << x << y << w << h << ")";
-    	}
-
         if(!haltUpdates || haltCount > 0)
-          update_to_display(x, y, w, h, currentMode, FALSE, currentFlags, fullUpdates);
+          update_to_display(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
 	else
 	  qDebug() << "ignoring update";
 
@@ -449,16 +332,16 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
 	 * return it to its previous settings.
 	 */
 	if(useModeOnce) {
-	  qDebug() << "going back to previous mode";
-	  currentMode = previousMode;
-	  currentFlags = previousFlags;
-	  useModeOnce = 0;
+		qDebug() << "going back to previous mode";
+		currentMode = previousMode;
+		currentFlags = previousFlags;
+		useModeOnce = 0;
 	}
 
 	if(useSchemeOnce) {
-	  qDebug() << "going back to previous scheme";
-	  currentScheme = previousScheme;
-	  useSchemeOnce = 0;
+		qDebug() << "going back to previous scheme";
+		currentScheme = previousScheme;
+		useSchemeOnce = 0;
 	}
     }
 }
@@ -504,8 +387,6 @@ bool EInkFbScreen::connect(const QString &displaySpec)
     const int len = 8; // "/dev/fbx"
     int m = displaySpec.indexOf(QLatin1String("/dev/fb"));
 
-    //rot();
-    
     /* normally we want to use the queue and merge scheme */
     setUpdateScheme(SCHEME_EINK_MERGE, false);
     rot();
@@ -518,6 +399,7 @@ bool EInkFbScreen::connect(const QString &displaySpec)
 
     if (access(dev.toLatin1().constData(), R_OK|W_OK) == 0)
         d_ptr->fd = open(dev.toLatin1().constData(), O_RDWR);
+
     if (d_ptr->fd == -1) {
         if (QApplication::type() == QApplication::GuiServer) {
             perror("QScreenLinuxFb::connect");
@@ -530,11 +412,9 @@ bool EInkFbScreen::connect(const QString &displaySpec)
 
     fb_fix_screeninfo finfo;
     fb_var_screeninfo vinfo;
-    //#######################
-    // Shut up Valgrind
+
     memset(&vinfo, 0, sizeof(vinfo));
     memset(&finfo, 0, sizeof(finfo));
-    //#######################
 
     /* Get fixed screen information */
     if (d_ptr->fd != -1 && ioctl(d_ptr->fd, FBIOGET_FSCREENINFO, &finfo)) {
@@ -936,32 +816,6 @@ bool EInkFbScreen::initDevice()
         return true;
     }
 
-#ifdef __i386__
-    // Now init mtrr
-    if(!::getenv("QWS_NOMTRR")) {
-        int mfd=open("/proc/mtrr",O_WRONLY,0);
-        // MTRR entry goes away when file is closed - i.e.
-        // hopefully when QWS is killed
-        if(mfd != -1) {
-            mtrr_sentry sentry;
-            sentry.base=(unsigned long int)finfo.smem_start;
-            //qDebug("Physical framebuffer address %p",(void*)finfo.smem_start);
-            // Size needs to be in 4k chunks, but that's not always
-            // what we get thanks to graphics card registers. Write combining
-            // these is Not Good, so we write combine what we can
-            // (which is not much - 4 megs on an 8 meg card, it seems)
-            unsigned int size=finfo.smem_len;
-            size=size >> 22;
-            size=size << 22;
-            sentry.size=size;
-            sentry.type=MTRR_TYPE_WRCOMB;
-            if(ioctl(mfd,MTRRIOC_ADD_ENTRY,&sentry)==-1) {
-                //printf("Couldn't add mtrr entry for %lx %lx, %s\n",
-                //sentry.base,sentry.size,strerror(errno));
-            }
-        }
-    }
-#endif
     if ((vinfo.bits_per_pixel==8) || (vinfo.bits_per_pixel==4) || (finfo.visual==FB_VISUAL_DIRECTCOLOR))
     {
         fb_cmap cmap;
@@ -1624,20 +1478,21 @@ static __u32 update_to_display(int left, int top, int width, int height, int wav
     if (fd_fb_ioctl == -1)
     fd_fb_ioctl = open("/dev/fb0", O_RDWR, 0);
 
-qDebug("send update (x,y,w,h,waveform,mode) with (%d, %d, %d, %d, %d, %d)\n", 
+    qDebug("send update (x,y,w,h,waveform,mode,flags) with (%d, %d, %d, %d, %d, %d, %d)\n", 
        upd_data.update_region.left, upd_data.update_region.top,
        upd_data.update_region.width, upd_data.update_region.height,
-       wave_mode,  upd_data.update_mode);
+       wave_mode,  upd_data.update_mode, upd_data.flags);
     retval = ioctl(fd_fb_ioctl, MXCFB_SEND_UPDATE, &upd_data);
     while (retval < 0) {
         /* We have limited memory available for updates, so wait and
- *       * then try again after some updates have completed */
+         * then try again after some updates have completed */
         sleep(1);
         retval = ioctl(fd_fb_ioctl, MXCFB_SEND_UPDATE, &upd_data);
     }
 
     if (wait_for_complete) {
-qDebug("waiting for update to complete\n");
+        qDebug("waiting for update to complete\n");
+
         /* Wait for update to complete */
         retval = ioctl(fd_fb_ioctl, MXCFB_WAIT_FOR_UPDATE_COMPLETE, &upd_data.update_marker);
         if (retval < 0) {
@@ -1645,7 +1500,9 @@ qDebug("waiting for update to complete\n");
         }
     }
 
-    return upd_data.waveform_mode;
+sleep(1);
+
+    return 0;
 }
 
 static int rot(void)
@@ -1685,7 +1542,6 @@ qDebug() << __func__ << "set rotation " << screen_info.rotate;
         return(0);
 }
 
-//static int scheme(void)
 void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
 {
     int fd_fb;
@@ -1699,6 +1555,7 @@ void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
 	scheme = UPDATE_SCHEME_QUEUE;
 	break;
       case SCHEME_EINK_MERGE:
+      default:
 	scheme = UPDATE_SCHEME_QUEUE_AND_MERGE;
 	break;
     }
@@ -1707,7 +1564,7 @@ void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
     retval = ioctl(fd_fb, MXCFB_SET_UPDATE_SCHEME, &scheme);
     if (retval < 0)
     {
-            printf("Scheme failed\n");
+            printf("setting scheme failed\n");
             return;
     }
 

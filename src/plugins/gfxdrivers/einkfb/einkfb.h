@@ -115,8 +115,6 @@ public:
 
     EInkFb_Shared * shared;
 
-    virtual void setWaveForm(int);
-    
     virtual void setRefreshMode(int mode, bool justOnce);
     virtual void setUpdateScheme(int newScheme, bool justOnce);
     virtual void blockUpdates();
@@ -131,7 +129,6 @@ protected:
     int cacheStart;
 
     static void clearCache(QScreen *instance, int);
-    int m_waveform;
 
     int haltUpdates;
     int haltCount;
