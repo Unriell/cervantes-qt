@@ -64,26 +64,14 @@
 #include <linux/mxcfb.h>
 
 #include "qwindowsystem_qws.h"
-
-#if !defined(Q_OS_DARWIN) && !defined(Q_OS_FREEBSD)
 #include <linux/fb.h>
-
-#ifdef __i386__
-#include <asm/mtrr.h>
-#endif
-#endif
-
-#include "s1d13521ioctl.h"
-
 
 QT_BEGIN_NAMESPACE
 
 extern int qws_client_id;
-static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
-    int wait_for_complete, uint flags, int fullUpdates);
+//static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
+//    int wait_for_complete, uint flags, int fullUpdates);
 static int rot(void);
-__u32 marker_val = 1;
-int fd_fb_ioctl = -1;
 
 #define WAVEFORM_MODE_INIT	0x0	/* init mode, turn the screen white */
 #define WAVEFORM_MODE_DU	0x1	/* fast 1bit update without flashing */
@@ -231,7 +219,7 @@ void EInkFbScreenPrivate::closeTty()
 */
 
 EInkFbScreen::EInkFbScreen(int display_id)
-    : QScreen(display_id, LinuxFBClass), d_ptr(new EInkFbScreenPrivate)
+    : QScreen(display_id, LinuxFBClass), marker_val(1), d_ptr(new EInkFbScreenPrivate)
 {
     canaccel=false;
     clearCacheFunc = &clearCache;
@@ -324,7 +312,7 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
     for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
 
         if(!haltUpdates || haltCount > 0)
-          update_to_display(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
+          updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
 	else
 	  qDebug() << "ignoring update";
 
@@ -387,8 +375,6 @@ bool EInkFbScreen::connect(const QString &displaySpec)
     const int len = 8; // "/dev/fbx"
     int m = displaySpec.indexOf(QLatin1String("/dev/fb"));
 
-    /* normally we want to use the queue and merge scheme */
-    setUpdateScheme(SCHEME_EINK_MERGE, false);
     rot();
 
     QString dev;
@@ -409,6 +395,9 @@ bool EInkFbScreen::connect(const QString &displaySpec)
         if (access(dev.toLatin1().constData(), R_OK) == 0)
             d_ptr->fd = open(dev.toLatin1().constData(), O_RDONLY);
     }
+
+    /* normally we want to use the queue and merge scheme */
+    setUpdateScheme(SCHEME_EINK_MERGE, false);
 
     fb_fix_screeninfo finfo;
     fb_var_screeninfo vinfo;
@@ -464,9 +453,9 @@ qDebug() << __func__ << " got rotation " << vinfo.rotate;
         dh=h;
         int xxoff, yyoff;
         if (sscanf(qwssize, "%*dx%*d+%d+%d", &xxoff, &yyoff) == 2) {
-            if (xxoff < 0 || xxoff + w > vinfo.xres)
+            if (xxoff < 0 || xxoff + w > (int)vinfo.xres)
                 xxoff = vinfo.xres - w;
-            if (yyoff < 0 || yyoff + h > vinfo.yres)
+            if (yyoff < 0 || yyoff + h > (int)vinfo.yres)
                 yyoff = vinfo.yres - h;
             xoff += xxoff;
             yoff += yyoff;
@@ -1453,7 +1442,7 @@ void EInkFbScreen::restoreController()
 {
 }
 
-static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
+int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wave_mode,
     int wait_for_complete, uint flags, int fullUpdates)
 {
     struct mxcfb_update_data upd_data;
@@ -1475,26 +1464,23 @@ static __u32 update_to_display(int left, int top, int width, int height, int wav
         upd_data.update_marker = 0;
     }
 
-    if (fd_fb_ioctl == -1)
-    fd_fb_ioctl = open("/dev/fb0", O_RDWR, 0);
-
     qDebug("send update (x,y,w,h,waveform,mode,flags) with (%d, %d, %d, %d, %d, %d, %d)\n", 
        upd_data.update_region.left, upd_data.update_region.top,
        upd_data.update_region.width, upd_data.update_region.height,
        wave_mode,  upd_data.update_mode, upd_data.flags);
-    retval = ioctl(fd_fb_ioctl, MXCFB_SEND_UPDATE, &upd_data);
+    retval = ioctl(d_ptr->fd, MXCFB_SEND_UPDATE, &upd_data);
     while (retval < 0) {
         /* We have limited memory available for updates, so wait and
          * then try again after some updates have completed */
         sleep(1);
-        retval = ioctl(fd_fb_ioctl, MXCFB_SEND_UPDATE, &upd_data);
+        retval = ioctl(d_ptr->fd, MXCFB_SEND_UPDATE, &upd_data);
     }
 
     if (wait_for_complete) {
         qDebug("waiting for update to complete\n");
 
         /* Wait for update to complete */
-        retval = ioctl(fd_fb_ioctl, MXCFB_WAIT_FOR_UPDATE_COMPLETE, &upd_data.update_marker);
+        retval = ioctl(d_ptr->fd, MXCFB_WAIT_FOR_UPDATE_COMPLETE, &upd_data.update_marker);
         if (retval < 0) {
             printf("Wait for update complete failed.  Error = 0x%x\n", retval);
         }
@@ -1544,12 +1530,9 @@ qDebug() << __func__ << "set rotation " << screen_info.rotate;
 
 void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
 {
-    int fd_fb;
     int retval;
     unsigned long scheme;
  
-    fd_fb = open("/dev/fb0", O_RDWR, 0);
-
     switch(newScheme) {
       case SCHEME_EINK_QUEUE:
 	scheme = UPDATE_SCHEME_QUEUE;
@@ -1561,7 +1544,7 @@ void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
     }
 
     qDebug() << "setting update scheme to " << scheme;
-    retval = ioctl(fd_fb, MXCFB_SET_UPDATE_SCHEME, &scheme);
+    retval = ioctl(d_ptr->fd, MXCFB_SET_UPDATE_SCHEME, &scheme);
     if (retval < 0)
     {
             printf("setting scheme failed\n");
@@ -1572,8 +1555,6 @@ void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
     currentScheme = scheme;
     useSchemeOnce = justOnce;
 
-    close(fd_fb);
-    
     return;    
 }
 
