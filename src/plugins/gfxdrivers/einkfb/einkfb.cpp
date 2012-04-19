@@ -69,8 +69,6 @@
 QT_BEGIN_NAMESPACE
 
 extern int qws_client_id;
-//static __u32 update_to_display(int left, int top, int width, int height, int wave_mode,
-//    int wait_for_complete, uint flags, int fullUpdates);
 static int rot(void);
 
 #define WAVEFORM_MODE_INIT	0x0	/* init mode, turn the screen white */
@@ -820,6 +818,8 @@ bool EInkFbScreen::initDevice()
     }
 
     if (canaccel && entryp) {
+
+qDebug() << __func__ << " cache";
         *entryp=0;
         *lowest = mapsize;
         insert_entry(*entryp, *lowest, *lowest);  // dummy entry to mark start
@@ -871,6 +871,8 @@ bool EInkFbScreen::initDevice()
 
 void EInkFbScreen::delete_entry(int pos)
 {
+
+qDebug() << __func__;
     if (pos > *entryp || pos < 0) {
         qWarning("Attempt to delete odd pos! %d %d", pos, *entryp);
         return;
@@ -899,6 +901,8 @@ void EInkFbScreen::delete_entry(int pos)
 
 void EInkFbScreen::insert_entry(int pos, int start, int end)
 {
+
+qDebug() << __func__;
     if (pos > *entryp) {
         qWarning("Attempt to insert odd pos! %d %d",pos,*entryp);
         return;
@@ -1032,6 +1036,8 @@ void EInkFbScreen::uncache(uchar * c)
 {
     // need to sync graphics card
 
+qDebug() << __func__;
+
     deleteEntry(c);
 }
 
@@ -1045,6 +1051,8 @@ void EInkFbScreen::uncache(uchar * c)
 */
 void EInkFbScreen::deleteEntry(uchar * c)
 {
+
+qDebug() << __func__;
     qt_fbdpy->grab();
     unsigned long pos=(unsigned long)c;
     pos-=((unsigned long)data);
@@ -1076,6 +1084,8 @@ void EInkFbScreen::deleteEntry(uchar * c)
 void EInkFbScreen::clearCache(QScreen *instance, int clientId)
 {
     EInkFbScreen *screen = (EInkFbScreen *)instance;
+
+qDebug() << __func__;
     if (!screen->canaccel || !screen->entryp)
         return;
     qt_fbdpy->grab();
@@ -1094,6 +1104,8 @@ void EInkFbScreen::setupOffScreen()
     // Figure out position of offscreen memory
     // Set up pool entries pointer table and 64-bit align it
     int psize = size;
+
+qDebug() << __func__;
 
     // hw: this causes the limitation of cursors to 64x64
     // the cursor should rather use the normal pixmap mechanism

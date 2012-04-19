@@ -119,6 +119,8 @@ public:
     virtual void setUpdateScheme(int newScheme, bool justOnce);
     virtual void blockUpdates();
     virtual void unblockUpdates();
+    virtual int updateDisplay(int left, int top, int width, int height, int wave_mode,
+                              int wait_for_complete, uint flags, int fullUpdates);
 
 protected:
 
@@ -143,6 +145,8 @@ protected:
     int previousFlags;
     int previousScheme;
 
+    int marker_val;
+
 private:
 
     void delete_entry(int);
@@ -153,9 +157,6 @@ private:
 
 	void setupController();
 	void restoreController();
-	unsigned reg140;
-	unsigned reg32c;
-	unsigned reg330;
 	
     EInkFbScreenPrivate *d_ptr;
 };
