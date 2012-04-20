@@ -117,6 +117,7 @@ public:
 
     virtual void setRefreshMode(int mode, bool justOnce);
     virtual void setUpdateScheme(int newScheme, bool justOnce);
+    virtual int  setRotation(int rot);
     virtual void blockUpdates();
     virtual void unblockUpdates();
     virtual int updateDisplay(int left, int top, int width, int height, int wave_mode,
@@ -143,6 +144,8 @@ protected:
 
     int previousMode;
     int previousFlags;
+    int previousFull;
+    int previousHalt;
     int previousScheme;
 
     int marker_val;

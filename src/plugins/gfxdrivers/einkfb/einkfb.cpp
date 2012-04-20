@@ -69,7 +69,6 @@
 QT_BEGIN_NAMESPACE
 
 extern int qws_client_id;
-static int rot(void);
 
 #define WAVEFORM_MODE_INIT	0x0	/* init mode, turn the screen white */
 #define WAVEFORM_MODE_DU	0x1	/* fast 1bit update without flashing */
@@ -248,15 +247,12 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 
     qDebug() << "setRefreshMode" << __func__ << mode << justOnce;
 
-    haltUpdates = (mode == MODE_EINK_BLOCK);
-    fullUpdates = (mode == MODE_EINK_SAFE);
-
     switch(mode) {
       case MODE_EINK_BLOCK:
 	  /* we only block further updates
 	   * so there is nothing more to do
 	   */
-	  return;
+	  newMode = currentMode;
 	  break;
       case MODE_EINK_SAFE:
 	  newMode = WAVEFORM_MODE_GC16;
@@ -272,11 +268,22 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
           break;
     }
 
-    previousMode = currentMode;
-    previousFlags = currentFlags;
+    /* when we are in the useOnce-Field already the previous 
+     * default-mode is already stored in the previous* vars
+     * so don't overwrite it
+     */
+    if (!useModeOnce) {
+	qDebug() << "saving previous mode";
+        previousMode = currentMode;
+        previousFlags = currentFlags;
+	previousHalt = haltUpdates;
+	previousFull = fullUpdates;
+    }
     useModeOnce = justOnce;
     currentMode = newMode;
     currentFlags = newFlags;
+    haltUpdates = (mode == MODE_EINK_BLOCK);
+    fullUpdates = (mode == MODE_EINK_SAFE);
 }
 
 void EInkFbScreen::blockUpdates()
@@ -300,7 +307,7 @@ void EInkFbScreen::setDirty(const QRect& rect)
 void EInkFbScreen::exposeRegion(QRegion region, int changing)
 {
     QScreen::exposeRegion(region, changing);
-    bool waitComplete = true; /* true for testing */
+    bool waitComplete = false; /* true for testing */
 
     // Update region
 
@@ -321,6 +328,8 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
 		qDebug() << "going back to previous mode";
 		currentMode = previousMode;
 		currentFlags = previousFlags;
+		haltUpdates = previousHalt;
+		fullUpdates = previousFull;
 		useModeOnce = 0;
 	}
 
@@ -373,8 +382,6 @@ bool EInkFbScreen::connect(const QString &displaySpec)
     const int len = 8; // "/dev/fbx"
     int m = displaySpec.indexOf(QLatin1String("/dev/fb"));
 
-    rot();
-
     QString dev;
     if (m > 0)
         dev = displaySpec.mid(m, len);
@@ -393,6 +400,8 @@ bool EInkFbScreen::connect(const QString &displaySpec)
         if (access(dev.toLatin1().constData(), R_OK) == 0)
             d_ptr->fd = open(dev.toLatin1().constData(), O_RDONLY);
     }
+
+    setRotation(FB_ROTATE_CCW);
 
     /* normally we want to use the queue and merge scheme */
     setUpdateScheme(SCHEME_EINK_MERGE, false);
@@ -421,7 +430,6 @@ bool EInkFbScreen::connect(const QString &displaySpec)
         qWarning("Error reading variable information");
         return false;
     }
-qDebug() << __func__ << " got rotation " << vinfo.rotate;
 
 	/* setup the display controller for QT to use */
 	setupController();
@@ -622,16 +630,6 @@ void EInkFbScreen::createPalette(fb_cmap &cmap, fb_var_screeninfo &vinfo, fb_fix
         cmap.transp=(unsigned short int *)
                     malloc(sizeof(unsigned short int)*screencols);
 
-        qDebug("ES %s:Red %d",__func__, cmap.red);
-        qDebug("ES %s:Green %d",__func__, cmap.green);
-        qDebug("ES %s:Blue %d",__func__, cmap.blue);
-        qDebug("ES %s:screencols %d",__func__, screencols);
-        qDebug("ES %s:finfo.type %d",__func__, finfo.type);
-        qDebug("ES %s:screencols %d",__func__, screencols);
-        qDebug("ES %s:grayscale %d",__func__, grayscale);
-        qDebug("ES %s:vinfo.bits_per_pixel %d",__func__, vinfo.bits_per_pixel);
-
-
         if (screencols==16) {
             if (finfo.type == FB_TYPE_PACKED_PIXELS) {
                 // We'll setup a grayscale cmap for 4bpp linear
@@ -652,7 +650,6 @@ void EInkFbScreen::createPalette(fb_cmap &cmap, fb_var_screeninfo &vinfo, fb_fix
                 unsigned char blues[16]  = { 0x00, 0x7F, 0xBF, 0xFF, 0x00, 0x11, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0x7F, 0x7F, 0x7F, 0x00, 0x00 };
 
                 for (int idx = 0; idx < 16; ++idx) {
-                     qDebug("ES:%s:create color index(%d)\n", idx);
                     cmap.red[idx] = ((reds[idx]) << 8)|reds[idx];
                     cmap.green[idx] = ((greens[idx]) << 8)|greens[idx];
                     cmap.blue[idx] = ((blues[idx]) << 8)|blues[idx];
@@ -1215,7 +1212,6 @@ void EInkFbScreen::setMode(int nw,int nh,int nd)
         perror("EInkFbScreen::setMode");
         qFatal("Error reading variable information in mode change");
     }
-qDebug() << __func__ << "got rotation " << vinfo.rotate;
 
     vinfo.xres=nw;
     vinfo.yres=nh;
@@ -1224,7 +1220,6 @@ qDebug() << __func__ << "got rotation " << vinfo.rotate;
     
     /* insert hardcoded rotation for now */
 //    vinfo.rotate = FB_ROTATE_CCW;
-qDebug() << __func__ << " set rotation " << vinfo.rotate;
 
     if (ioctl(d_ptr->fd, FBIOPUT_VSCREENINFO, &vinfo)) {
         perror("EInkFbScreen::setMode");
@@ -1498,45 +1493,43 @@ int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wa
         }
     }
 
-sleep(1);
-
     return 0;
 }
 
-static int rot(void)
+int EInkFbScreen::setRotation(int rot)
 {
-        int fd_fb;
         int retval;
         struct fb_var_screeninfo screen_info;
 
         memset(&screen_info, 0, sizeof(screen_info));
 
-        fd_fb = open("/dev/fb0", O_RDWR, 0);
-
-        if (fd_fb != -1 && ioctl(fd_fb, FBIOGET_VSCREENINFO, &screen_info)) {
-            perror("QEInkFbScreen::connect");
+        if (ioctl(d_ptr->fd, FBIOGET_VSCREENINFO, &screen_info)) {
             qWarning("Error reading variable information");
             return false;
         }
-qDebug() << __func__ << " got rotation " << screen_info.rotate;
 
-        printf("Rotating FB 270 degrees\n");
-        screen_info.rotate = 3;
+        qDebug() << "Rotating FB to " << rot;
+        screen_info.rotate = rot;
+
+        /* it seems 16bit color, results in the best visual result.
+	 * 8bit grayscale processed by the pxp results in a lot of ghosting
+	 */
         screen_info.bits_per_pixel = 16;
         screen_info.grayscale = 0;
-qDebug() << __func__ << "set rotation " << screen_info.rotate;
-        retval = ioctl(fd_fb, FBIOPUT_VSCREENINFO, &screen_info);
+        //screen_info.bits_per_pixel = 8;
+        //screen_info.grayscale = 1;
+
+        retval = ioctl(d_ptr->fd, FBIOPUT_VSCREENINFO, &screen_info);
         if (retval < 0)
         {
                 printf("Rotation failed\n");
                 return(-1);
         }
 
-        printf("New dimensions: xres = %d, xres_virtual = %d,"
+        qDebug("New dimensions: xres = %d, xres_virtual = %d,"
                 "yres = %d, yres_virtual = %d\n",
                 screen_info.xres, screen_info.xres_virtual,
                 screen_info.yres, screen_info.yres_virtual);
-        close(fd_fb);
         return(0);
 }
 
