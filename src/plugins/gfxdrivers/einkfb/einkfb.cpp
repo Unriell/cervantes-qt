@@ -315,13 +315,17 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
     bool waitComplete = false; /* true for testing */
 
     // Update region
+    if (haltCount > 0) {
+        qDebug() << "haltCount > 0, ignoring updates";
+        return;
+    }
 
     //=================================
     QVector<QRect> rv = region.rects();
 
     for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
 
-        if(!haltUpdates || haltCount > 0)
+        if(!haltUpdates)
           updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
 	else
 	  qDebug() << "ignoring update";
