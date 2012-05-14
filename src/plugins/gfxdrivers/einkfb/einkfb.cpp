@@ -249,7 +249,7 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
 {
     int newMode = -1;
 
-    qDebug() << "setRefreshMode" << __func__ << mode << justOnce;
+    qDebug() << "setRefreshMode" << __func__ << mode << newFlags << justOnce;
 
     switch(mode) {
       case MODE_EINK_BLOCK:
@@ -327,11 +327,17 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
     for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
         /* keep track of the flags used for the update */
         usedFlags = currentFlags;
+        qDebug() << "flags: " << usedFlags;
 
-        if(!haltUpdates)
-          updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
-	else
+        if(!haltUpdates) {
+	  if (usedFlags & FLAG_FULLSCREEN_UPDATE)
+	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, fullUpdates);
+	  else
+            updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, 0, fullUpdates);
+	  
+	} else {
 	  qDebug() << "ignoring update";
+	}
 
         /* if we should only use the current mode once,
 	 * return it to its previous settings.
