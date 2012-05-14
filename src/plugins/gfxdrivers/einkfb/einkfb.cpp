@@ -313,6 +313,7 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
 {
     QScreen::exposeRegion(region, changing);
     bool waitComplete = false; /* true for testing */
+    int usedFlags = 0;
 
     // Update region
     if (haltCount > 0) {
@@ -324,6 +325,8 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
     QVector<QRect> rv = region.rects();
 
     for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
+        /* keep track of the flags used for the update */
+        usedFlags = currentFlags;
 
         if(!haltUpdates)
           updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, currentFlags, fullUpdates);
