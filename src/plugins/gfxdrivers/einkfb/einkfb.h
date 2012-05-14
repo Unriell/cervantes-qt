@@ -83,6 +83,12 @@ enum EInkFbModes {
     MODE_EINK_FASTEST
 };
 
+/**
+ * Flags for setRefreshMode()
+ * We use a bitfield for the flags to be able to easily add more flags
+ */
+#define FLAG_FULL_UPDATES	(1 << 0)
+
 enum EInkFbUpdateSchemes {
     SCHEME_EINK_QUEUE,
     SCHEME_EINK_MERGE
@@ -116,6 +122,7 @@ public:
     EInkFb_Shared * shared;
 
     virtual void setRefreshMode(int mode, bool justOnce);
+    virtual void setRefreshMode(int mode, int newFlags, bool justOnce);
     virtual void setUpdateScheme(int newScheme, bool justOnce);
     virtual int  setRotation(int rot);
     virtual void blockUpdates();

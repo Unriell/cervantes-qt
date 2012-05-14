@@ -242,8 +242,12 @@ EInkFbScreen::~EInkFbScreen()
 
 void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 {
+    setRefreshMode(mode, 0, justOnce);
+}
+
+void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
+{
     int newMode = -1;
-    int newFlags = 0;
 
     qDebug() << "setRefreshMode" << __func__ << mode << justOnce;
 
@@ -279,6 +283,7 @@ void EInkFbScreen::setRefreshMode(int mode, bool justOnce)
 	previousHalt = haltUpdates;
 	previousFull = fullUpdates;
     }
+
     useModeOnce = justOnce;
     currentMode = newMode;
     currentFlags = newFlags;
