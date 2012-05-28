@@ -306,34 +306,22 @@ void EInkFbScreen::unblockUpdates()
 /* FIXME: this can probably go away completely */
 void EInkFbScreen::setDirty(const QRect& rect)
 {
-    QScreen::setDirty(rect);
-}
+	bool waitComplete = false; /* true for testing */
 
-void EInkFbScreen::exposeRegion(QRegion region, int changing)
-{
-    QScreen::exposeRegion(region, changing);
-    bool waitComplete = false; /* true for testing */
-    int usedFlags = 0;
+	qDebug() << "setDirty";
+	QScreen::setDirty(rect);
 
-    // Update region
-    if (haltCount > 0) {
-        qDebug() << "haltCount > 0, ignoring updates";
-        return;
-    }
 
-    //=================================
-    QVector<QRect> rv = region.rects();
-
-    for (QVector<QRect>::const_iterator i = rv.begin(); i != rv.end(); ++i) {
-        /* keep track of the flags used for the update */
-        usedFlags = currentFlags;
-        qDebug() << "flags: " << usedFlags;
+	if (haltCount > 0) {
+	    qDebug() << "haltCount > 0, ignoring updates";
+	    return;
+	}
 
         if(!haltUpdates) {
-	  if (usedFlags & FLAG_FULLSCREEN_UPDATE)
+	  if (currentFlags & FLAG_FULLSCREEN_UPDATE)
 	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, fullUpdates);
 	  else
-            updateDisplay(i->x(), i->y(), i->width(), i->height(), currentMode, waitComplete, 0, fullUpdates);
+            updateDisplay(rect.x(), rect.y(), rect.width(), rect.height(), currentMode, waitComplete, 0, fullUpdates);
 	  
 	} else {
 	  qDebug() << "ignoring update";
@@ -356,7 +344,12 @@ void EInkFbScreen::exposeRegion(QRegion region, int changing)
 		currentScheme = previousScheme;
 		useSchemeOnce = 0;
 	}
-    }
+
+}
+
+void EInkFbScreen::exposeRegion(QRegion region, int changing)
+{
+    QScreen::exposeRegion(region, changing);
 }
 
 /*!
