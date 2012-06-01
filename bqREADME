@@ -1,0 +1,6 @@
+
+The plugins for the i.MX508 can be found in the branch eink-imx508.
+They are built against qt-4.7.4.
+
+The master branch may contain the whole qt-4.7.4 a some point, but currently
+only holds the upstream-files that get changed for the plugins.
