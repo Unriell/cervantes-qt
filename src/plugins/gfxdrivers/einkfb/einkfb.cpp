@@ -305,7 +305,7 @@ void EInkFbScreen::unblockUpdates()
 
 void EInkFbScreen::setDirty(const QRect& rect)
 {
-	bool waitComplete = false; /* true for testing */
+	bool waitComplete = false;
 
 	qDebug() << "setDirty";
 	QScreen::setDirty(rect);
@@ -315,6 +315,9 @@ void EInkFbScreen::setDirty(const QRect& rect)
 	    qDebug() << "haltCount > 0, ignoring updates";
 	    return;
 	}
+
+	if (currentFlags & FLAG_WAITFORCOMPLETION)
+		waitComplete = true;
 
         if(!haltUpdates) {
 	  if (currentFlags & FLAG_FULLSCREEN_UPDATE)

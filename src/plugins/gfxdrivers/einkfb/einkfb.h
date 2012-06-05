@@ -87,7 +87,9 @@ enum EInkFbModes {
  * Flags for setRefreshMode()
  * We use a bitfield for the flags to be able to easily add more flags
  */
-#define FLAG_FULLSCREEN_UPDATE	(1 << 0)
+#define FLAG_FULLSCREEN_UPDATE		(1 << 0)
+#define FLAG_PARTIALSCREEN_UPDATE	0
+#define FLAG_WAITFORCOMPLETION		(1 << 1)
 
 enum EInkFbUpdateSchemes {
     SCHEME_EINK_QUEUE,
