@@ -303,7 +303,6 @@ void EInkFbScreen::unblockUpdates()
     qDebug() << "unblock, haltcount now " << haltCount;
 }
 
-/* FIXME: this can probably go away completely */
 void EInkFbScreen::setDirty(const QRect& rect)
 {
 	bool waitComplete = false; /* true for testing */
@@ -344,9 +343,9 @@ void EInkFbScreen::setDirty(const QRect& rect)
 		currentScheme = previousScheme;
 		useSchemeOnce = 0;
 	}
-
 }
 
+/* FIXME: this can probably go away completely */
 void EInkFbScreen::exposeRegion(QRegion region, int changing)
 {
     QScreen::exposeRegion(region, changing);
@@ -1490,6 +1489,7 @@ int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wa
     while (retval < 0) {
         /* We have limited memory available for updates, so wait and
          * then try again after some updates have completed */
+        qDebug("send_update returned %d, retrying\n", retval);
         sleep(1);
         retval = ioctl(d_ptr->fd, MXCFB_SEND_UPDATE, &upd_data);
     }
