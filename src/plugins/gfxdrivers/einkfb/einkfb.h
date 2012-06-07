@@ -129,6 +129,8 @@ public:
     virtual int  setRotation(int rot);
     virtual void blockUpdates();
     virtual void unblockUpdates();
+    virtual void queueUpdates();
+    virtual void flushUpdates();
     virtual int updateDisplay(int left, int top, int width, int height, int wave_mode,
                               int wait_for_complete, uint flags, int fullUpdates);
 
@@ -144,6 +146,7 @@ protected:
 
     int haltUpdates;
     int haltCount;
+    int queueCount;
     int currentMode;
     int currentFlags;
     int currentScheme;
@@ -158,6 +161,9 @@ protected:
     int previousScheme;
 
     int marker_val;
+    
+    QRect pendingArea;
+    bool pendingPresent;
 
 private:
 

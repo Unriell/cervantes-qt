@@ -230,6 +230,8 @@ EInkFbScreen::EInkFbScreen(int display_id)
     currentFlags = 0;
     haltUpdates = 0;
     haltCount = 0;
+    queueCount = 0;
+    pendingPresent = false;
 }
 
 /*!
@@ -303,6 +305,23 @@ void EInkFbScreen::unblockUpdates()
     qDebug() << "unblock, haltcount now " << haltCount;
 }
 
+void EInkFbScreen::queueUpdates()
+{
+	queueCount++;
+	qDebug() << "queue updates, count now " << queueCount;
+}
+
+void EInkFbScreen::flushUpdates()
+{
+	queueCount--;
+	qDebug() << "flush updates, count now " << queueCount;
+    
+	if (queueCount == 0 && pendingPresent) {
+		setDirty(pendingArea);
+		pendingPresent = false;
+	}
+}
+
 void EInkFbScreen::setDirty(const QRect& rect)
 {
 	bool waitComplete = false;
@@ -314,6 +333,15 @@ void EInkFbScreen::setDirty(const QRect& rect)
 	if (haltCount > 0) {
 	    qDebug() << "haltCount > 0, ignoring updates";
 	    return;
+	}
+
+	if (queueCount > 0) {
+		if(pendingPresent)
+			pendingArea = pendingArea.united(rect);
+		else
+			pendingArea = QRect(rect);
+		pendingPresent = true;
+		return;
 	}
 
 	if (currentFlags & FLAG_WAITFORCOMPLETION)
