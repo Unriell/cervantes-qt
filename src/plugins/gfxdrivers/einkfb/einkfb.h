@@ -125,7 +125,9 @@ public:
 
     virtual void setRefreshMode(int mode, bool justOnce);
     virtual void setRefreshMode(int mode, int newFlags, bool justOnce);
+    virtual void restoreRefreshMode();
     virtual void setUpdateScheme(int newScheme, bool justOnce);
+    virtual void restoreUpdateScheme();
     virtual int  setRotation(int rot);
     virtual void blockUpdates();
     virtual void unblockUpdates();

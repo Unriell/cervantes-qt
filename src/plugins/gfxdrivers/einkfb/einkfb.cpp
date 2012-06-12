@@ -293,6 +293,18 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
     fullUpdates = (mode == MODE_EINK_SAFE);
 }
 
+void EInkFbScreen::restoreRefreshMode()
+{
+	if(useModeOnce) {
+		qDebug() << "going back to previous mode";
+		currentMode = previousMode;
+		currentFlags = previousFlags;
+		haltUpdates = previousHalt;
+		fullUpdates = previousFull;
+		useModeOnce = 0;
+	}
+}
+
 void EInkFbScreen::blockUpdates()
 {
     haltCount++; 
@@ -360,20 +372,8 @@ void EInkFbScreen::setDirty(const QRect& rect)
         /* if we should only use the current mode once,
 	 * return it to its previous settings.
 	 */
-	if(useModeOnce) {
-		qDebug() << "going back to previous mode";
-		currentMode = previousMode;
-		currentFlags = previousFlags;
-		haltUpdates = previousHalt;
-		fullUpdates = previousFull;
-		useModeOnce = 0;
-	}
-
-	if(useSchemeOnce) {
-		qDebug() << "going back to previous scheme";
-		currentScheme = previousScheme;
-		useSchemeOnce = 0;
-	}
+	restoreRefreshMode();
+	restoreUpdateScheme();
 }
 
 /* FIXME: this can probably go away completely */
@@ -1603,6 +1603,15 @@ void EInkFbScreen::setUpdateScheme(int newScheme, bool justOnce)
     useSchemeOnce = justOnce;
 
     return;    
+}
+
+void EInkFbScreen::restoreUpdateScheme()
+{
+	if(useSchemeOnce) {
+		qDebug() << "going back to previous scheme";
+		currentScheme = previousScheme;
+		useSchemeOnce = 0;
+	}
 }
 
 QT_END_NAMESPACE
