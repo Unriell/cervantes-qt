@@ -231,6 +231,7 @@ EInkFbScreen::EInkFbScreen(int display_id)
     haltUpdates = 0;
     haltCount = 0;
     queueCount = 0;
+    fullUpdates = 0;
     pendingPresent = false;
 }
 
