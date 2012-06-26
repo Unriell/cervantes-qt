@@ -270,6 +270,9 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
       case MODE_EINK_QUICK:
 	  newMode = WAVEFORM_MODE_GC16;
 	  break;
+      case MODE_EINK_FAST:
+	  newMode = WAVEFORM_MODE_DU;
+	  break;
       case MODE_EINK_FASTEST:
 	  newMode = WAVEFORM_MODE_A2;
 	  break;

@@ -79,8 +79,9 @@ enum EInkFbModes {
     MODE_EINK_AUTO,
     MODE_EINK_BLOCK,
     MODE_EINK_SAFE,	/* the same as QUICK with FLAG_REFRESH set */
-    MODE_EINK_QUICK,
-    MODE_EINK_FASTEST
+    MODE_EINK_QUICK,    /* normal updates without additional constraints */
+    MODE_EINK_FAST,     /* focus on speed, colordepth reduction possible */
+    MODE_EINK_FASTEST   /* highest speed available, image artifacts possible */
 };
 
 /**
