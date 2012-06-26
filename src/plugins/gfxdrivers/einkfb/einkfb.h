@@ -155,11 +155,9 @@ protected:
     int currentScheme;
     int useModeOnce;
     int useSchemeOnce;
-    int fullUpdates;
 
     int previousMode;
     int previousFlags;
-    int previousFull;
     int previousHalt;
     int previousScheme;
 

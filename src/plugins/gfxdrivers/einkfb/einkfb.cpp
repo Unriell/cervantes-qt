@@ -234,7 +234,6 @@ EInkFbScreen::EInkFbScreen(int display_id)
     haltUpdates = 0;
     haltCount = 0;
     queueCount = 0;
-    fullUpdates = 0;
     pendingPresent = false;
 }
 
@@ -266,6 +265,7 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
 	  break;
       case MODE_EINK_SAFE:
 	  newMode = WAVEFORM_MODE_GC16;
+	  newFlags |= FLAG_REFRESH;
 	  break;
       case MODE_EINK_QUICK:
 	  newMode = WAVEFORM_MODE_GC16;
@@ -287,14 +287,12 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
         previousMode = currentMode;
         previousFlags = currentFlags;
 	previousHalt = haltUpdates;
-	previousFull = fullUpdates;
     }
 
     useModeOnce = justOnce;
     currentMode = newMode;
     currentFlags = newFlags;
     haltUpdates = (mode == MODE_EINK_BLOCK);
-    fullUpdates = (mode == MODE_EINK_SAFE);
 }
 
 void EInkFbScreen::restoreRefreshMode()
@@ -304,7 +302,6 @@ void EInkFbScreen::restoreRefreshMode()
 		currentMode = previousMode;
 		currentFlags = previousFlags;
 		haltUpdates = previousHalt;
-		fullUpdates = previousFull;
 		useModeOnce = 0;
 	}
 }
@@ -365,9 +362,9 @@ void EInkFbScreen::setDirty(const QRect& rect)
 
         if(!haltUpdates) {
 	  if (currentFlags & FLAG_FULLSCREEN_UPDATE)
-	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, fullUpdates || (currentFlags & FLAG_REFRESH));
+	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, (currentFlags & FLAG_REFRESH));
 	  else
-            updateDisplay(rect.x(), rect.y(), rect.width(), rect.height(), currentMode, waitComplete, 0, fullUpdates || (currentFlags & FLAG_REFRESH));
+            updateDisplay(rect.x(), rect.y(), rect.width(), rect.height(), currentMode, waitComplete, 0, (currentFlags & FLAG_REFRESH));
 	  
 	} else {
 	  qDebug() << "ignoring update";
