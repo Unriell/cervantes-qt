@@ -73,6 +73,9 @@ extern int qws_client_id;
 #define WAVEFORM_MODE_INIT	0x0	/* init mode, turn the screen white */
 #define WAVEFORM_MODE_DU	0x1	/* fast 1bit update without flashing */
 #define WAVEFORM_MODE_GC16	0x2	/* High fidelity (flashing) */
+/* 0x3 is empty */
+#define WAVEFORM_MODE_A2	0x4	/* Fast page flipping at reduced contrast */
+#define WAVEFORM_MODE_GL16	0x5	/* not everywhere */
 
 //#define DEBUG_CACHE
 
@@ -268,7 +271,7 @@ void EInkFbScreen::setRefreshMode(int mode, int newFlags, bool justOnce)
 	  newMode = WAVEFORM_MODE_GC16;
 	  break;
       case MODE_EINK_FASTEST:
-	  newMode = WAVEFORM_MODE_DU;
+	  newMode = WAVEFORM_MODE_A2;
 	  break;
       case MODE_EINK_AUTO:
 	  newMode = WAVEFORM_MODE_AUTO;
