@@ -78,7 +78,7 @@ class EInkFbScreenPrivate;
 enum EInkFbModes {
     MODE_EINK_AUTO,
     MODE_EINK_BLOCK,
-    MODE_EINK_SAFE,
+    MODE_EINK_SAFE,	/* the same as QUICK with FLAG_REFRESH set */
     MODE_EINK_QUICK,
     MODE_EINK_FASTEST
 };
@@ -90,6 +90,7 @@ enum EInkFbModes {
 #define FLAG_FULLSCREEN_UPDATE		(1 << 0)
 #define FLAG_PARTIALSCREEN_UPDATE	0
 #define FLAG_WAITFORCOMPLETION		(1 << 1)
+#define FLAG_REFRESH			(1 << 2)
 
 enum EInkFbUpdateSchemes {
     SCHEME_EINK_QUEUE,

@@ -365,9 +365,9 @@ void EInkFbScreen::setDirty(const QRect& rect)
 
         if(!haltUpdates) {
 	  if (currentFlags & FLAG_FULLSCREEN_UPDATE)
-	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, fullUpdates);
+	    updateDisplay(0, 0, width(), height(), currentMode, waitComplete, 0, fullUpdates || (currentFlags & FLAG_REFRESH));
 	  else
-            updateDisplay(rect.x(), rect.y(), rect.width(), rect.height(), currentMode, waitComplete, 0, fullUpdates);
+            updateDisplay(rect.x(), rect.y(), rect.width(), rect.height(), currentMode, waitComplete, 0, fullUpdates || (currentFlags & FLAG_REFRESH));
 	  
 	} else {
 	  qDebug() << "ignoring update";
