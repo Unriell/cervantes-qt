@@ -131,8 +131,10 @@ public:
     virtual void setUpdateScheme(int newScheme, bool justOnce);
     virtual void restoreUpdateScheme();
     virtual int  setRotation(int rot);
+    virtual void resetBlock();
     virtual void blockUpdates();
     virtual void unblockUpdates();
+    virtual void resetQueue();
     virtual void queueUpdates();
     virtual void flushUpdates();
     virtual int updateDisplay(int left, int top, int width, int height, int wave_mode,

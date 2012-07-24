@@ -309,6 +309,12 @@ void EInkFbScreen::restoreRefreshMode()
 	}
 }
 
+void EInkFbScreen::resetBlock()
+{
+	haltCount = 0;
+	qDebug() << "resetBlock, haltcount now 0";
+}
+
 void EInkFbScreen::blockUpdates()
 {
     haltCount++; 
@@ -317,8 +323,23 @@ void EInkFbScreen::blockUpdates()
 
 void EInkFbScreen::unblockUpdates()
 {
+    if(haltCount == 0)
+        return;
+
     haltCount--;
     qDebug() << "unblock, haltcount now " << haltCount;
+}
+
+void EInkFbScreen::resetQueue()
+{
+	queueCount = 0;
+	qDebug() << "resetQueue, count now 0";
+
+	/* flush pending updates to the screen */
+	if (pendingPresent) {
+		setDirty(pendingArea);
+		pendingPresent = false;
+	}
 }
 
 void EInkFbScreen::queueUpdates()
@@ -329,6 +350,10 @@ void EInkFbScreen::queueUpdates()
 
 void EInkFbScreen::flushUpdates()
 {
+	/* mismatch, likely due to reset call */
+	if(queueCount == 0)
+		return;
+
 	queueCount--;
 	qDebug() << "flush updates, count now " << queueCount;
     
