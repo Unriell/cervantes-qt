@@ -335,8 +335,18 @@ void EInkFbScreen::resetQueue()
 	queueCount = 0;
 	qDebug() << "resetQueue, count now 0";
 
+	/* ignore pending regions */
+	pendingPresent = false;
+}
+
+void EInkFbScreen::resetFlushQueue()
+{
+	queueCount = 0;
+	qDebug() << "resetQueue, count now 0";
+
 	/* flush pending updates to the screen */
 	if (pendingPresent) {
+		qDebug() << "flushing pending updates";
 		setDirty(pendingArea);
 		pendingPresent = false;
 	}

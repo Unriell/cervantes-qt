@@ -135,6 +135,7 @@ public:
     virtual void blockUpdates();
     virtual void unblockUpdates();
     virtual void resetQueue();
+    virtual void resetFlushQueue();
     virtual void queueUpdates();
     virtual void flushUpdates();
     virtual int updateDisplay(int left, int top, int width, int height, int wave_mode,
