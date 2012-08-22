@@ -386,7 +386,7 @@ void EInkFbScreen::setDirty(const QRect& rect)
 	    return;
 	}
 
-	if (queueCount > 0) {
+	if (queueCount > 0 && !(currentFlags & FLAG_IGNORE_QUEUE)) {
 		if(pendingPresent)
 			pendingArea = pendingArea.united(rect);
 		else

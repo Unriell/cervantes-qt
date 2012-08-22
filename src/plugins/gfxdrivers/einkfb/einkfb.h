@@ -92,6 +92,7 @@ enum EInkFbModes {
 #define FLAG_PARTIALSCREEN_UPDATE	0
 #define FLAG_WAITFORCOMPLETION		(1 << 1)
 #define FLAG_REFRESH			(1 << 2)
+#define FLAG_IGNORE_QUEUE		(1 << 3)
 
 enum EInkFbUpdateSchemes {
     SCHEME_EINK_QUEUE,
