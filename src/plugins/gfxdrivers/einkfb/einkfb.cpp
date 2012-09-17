@@ -1533,7 +1533,7 @@ int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wa
     int wait_for_complete, uint flags, int fullUpdates)
 {
     struct mxcfb_update_data upd_data;
-    int retval;
+    int retval, retry;
 
     /* Dummy to not change the class definition shortly before release.
      * The plugin currently sets the rotation statically to CCW, so
@@ -1591,14 +1591,20 @@ int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wa
        upd_data.update_region.left, upd_data.update_region.top,
        upd_data.update_region.width, upd_data.update_region.height,
        wave_mode,  upd_data.update_mode, upd_data.flags);
+
+    retry = 0;
     retval = ioctl(d_ptr->fd, MXCFB_SEND_UPDATE, &upd_data);
-    while (retval < 0) {
+    while (retval < 0 && retry < 9) {
         /* We have limited memory available for updates, so wait and
          * then try again after some updates have completed */
         qDebug("send_update returned %d, retrying\n", retval);
         sleep(1);
+        retry++;
         retval = ioctl(d_ptr->fd, MXCFB_SEND_UPDATE, &upd_data);
     }
+
+    if (retval < 0)
+        return retval;
 
     if (wait_for_complete) {
         qDebug("waiting for update to complete\n");
