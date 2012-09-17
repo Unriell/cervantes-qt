@@ -1535,6 +1535,42 @@ int EInkFbScreen::updateDisplay(int left, int top, int width, int height, int wa
     struct mxcfb_update_data upd_data;
     int retval;
 
+    /* Dummy to not change the class definition shortly before release.
+     * The plugin currently sets the rotation statically to CCW, so
+     * simply set this value here.
+     * FIXME: safe the set rotation in a member to be able to handle
+     * this dynamically.
+     */
+    int rotate = FB_ROTATE_CCW;
+
+    /* Limit update area to correct values, as the kernel driver does
+     * not cope with oversized update areas.
+     */
+    switch(rotate) {
+    case FB_ROTATE_UR:
+    case FB_ROTATE_UD:
+        if (d_ptr->startupw > width) {
+            qDebug() << "limiting to" << d_ptr->startupw << "from" << width;
+            width = d_ptr->startupw;
+        }
+        if (d_ptr->startuph > height) {
+            qDebug() << "limiting to" << d_ptr->startuph << "from" << height;
+            height = d_ptr->startuph;
+        }
+        break;
+    case FB_ROTATE_CW:
+    case FB_ROTATE_CCW:
+        if (d_ptr->startuph > width) {
+            qDebug() << "limiting to" << d_ptr->startuph << "from" << width;
+            width = d_ptr->startuph;
+        }
+        if (d_ptr->startupw > height) {
+            qDebug() << "limiting to" << d_ptr->startupw << "from" << height;
+            height = d_ptr->startupw;
+        }
+        break;
+    }
+
     upd_data.update_mode = fullUpdates ? UPDATE_MODE_FULL : UPDATE_MODE_PARTIAL;
     upd_data.waveform_mode = wave_mode;
     upd_data.update_region.left = left;
