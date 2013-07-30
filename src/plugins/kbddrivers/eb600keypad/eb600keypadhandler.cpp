@@ -278,14 +278,6 @@ void EB600KeypadHandler::readKbdData()
                                 {
                                         case 1: // press
                                   //          printf ("[%s-%d] %d pressed.\n",__func__,__LINE__,keycode);
-                                            while ((i+1) < (tot / sizeof(struct input_event))) {
-                                              if (0 != ev[i+1].value)
-                                                ++i;
-                                            else
-                                                break;
-                                            }
-                                            if ((i+1) < (tot / sizeof(struct input_event)))
-                                            continue;
                                             processKeyEvent(unicode, keycode, (Qt::KeyboardModifiers)modifiers,
                                                             true, autorepeat);
 
