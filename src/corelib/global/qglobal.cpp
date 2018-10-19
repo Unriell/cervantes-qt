@@ -52,6 +52,7 @@
 
 #ifndef QT_NO_QOBJECT
 #include <private/qthread_p.h>
+#include <private/qcoreapplication_p.h>
 #endif
 
 #include <stdio.h>
@@ -94,6 +95,8 @@
 
 _LIT(qt_S60Filter, "Series60v?.*.sis");
 _LIT(qt_symbianSystemInstallDir, "z:\\system\\install\\");
+#elif defined(Q_OS_UNIX)
+#include <syslog.h>
 #endif
 
 QT_BEGIN_NAMESPACE
@@ -2388,6 +2391,27 @@ void qt_message_output(QtMsgType msgType, const char *buf)
 #else
         fprintf(stderr, "%s\n", buf);
         fflush(stderr);
+
+        if (qgetenv("QT_USE_SYSLOG").toInt() > 0) {
+            static bool logOpened = false;
+            if (!logOpened) {
+                QByteArray appname;
+#ifndef QT_NO_QOBJECT
+                appname = QCoreApplication::applicationName().toLatin1(); // don't use the local codec here
+                if (appname.isEmpty())
+                    appname = QCoreApplicationPrivate::staticAppName().toLatin1();
+#endif
+                if (appname.isEmpty())
+                    appname = "unknown-qt-application";
+                openlog(appname, LOG_NOWAIT | LOG_PID, LOG_USER);
+                logOpened = true;
+            }
+
+            int level = msgType == QtFatalMsg ? LOG_ERR :
+                        msgType == QtWarningMsg ? LOG_WARNING :
+                        LOG_DEBUG;
+            syslog(level, "%s", buf);
+        }
 #endif
     }
 

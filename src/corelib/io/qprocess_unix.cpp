@@ -555,6 +555,13 @@ static char **_q_dupEnvironment(const QProcessEnvironmentPrivate::Hash &environm
     return envp;
 }
 
+inline void debbug_561203()
+{
+#if defined(__linux__) && defined(__hppa__)
+        usleep(1000);
+#endif
+}
+
 #ifdef Q_OS_MAC
 Q_GLOBAL_STATIC(QMutex, cfbundleMutex);
 #endif
@@ -683,6 +690,7 @@ void QProcessPrivate::startProcess()
 #if defined(Q_OS_QNX)
     pid_t childPid = spawnChild(workingDirPtr, argv, envp);
 #else
+    debbug_561203();
     pid_t childPid = fork();
     int lastForkErrno = errno;
 #endif
@@ -1380,6 +1388,7 @@ bool QProcessPrivate::startDetached(const QString &program, const QStringList &a
         return false;
     }
 
+    debbug_561203();
     pid_t childPid = fork();
     if (childPid == 0) {
         struct sigaction noaction;
@@ -1392,6 +1401,7 @@ bool QProcessPrivate::startDetached(const QString &program, const QStringList &a
         qt_safe_close(startedPipe[0]);
         qt_safe_close(pidPipe[0]);
 
+        debbug_561203();
         pid_t doubleForkPid = fork();
         if (doubleForkPid == 0) {
             qt_safe_close(pidPipe[1]);

@@ -521,7 +521,7 @@ int main(int argc, char *argv[])
     CollectionConfiguration::setAddressBarVisible(helpEngine,
          !config.hideAddressBar());
     CollectionConfiguration::setCreationTime(helpEngine,
-        QDateTime::currentDateTime().toTime_t());
+        QDateTime::fromString("2012-12-20T12:00:00Z", Qt::ISODate).toUTC().toTime_t());
     CollectionConfiguration::setFullTextSearchFallbackEnabled(helpEngine,
         config.fullTextSearchFallbackEnabled());
 

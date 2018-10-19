@@ -86,6 +86,8 @@ public:
     bool sendThroughObjectEventFilters(QObject *, QEvent *);
     bool notify_helper(QObject *, QEvent *);
 
+    static QString staticAppName()
+    { return QCoreApplication::self ? QCoreApplication::self->d_func()->appName() : QString(); }
     virtual QString appName() const;
     mutable QString applicationName;
 

@@ -2531,6 +2531,23 @@ QStringList QCoreApplication::libraryPaths()
             if (!app_libpaths->contains(installPathPlugins))
                 app_libpaths->append(installPathPlugins);
         }
+        QString pathSep("/");
+        QStringList dirnames = QString(installPathPlugins).split(QLatin1Char('/'), QString::SkipEmptyParts);
+        if (dirnames[0] == QLatin1String("usr") && dirnames[1] == QLatin1String("lib") && dirnames[3] == QLatin1String("qt4"))
+        {
+            QString legacyPathPlugins = pathSep;
+            int i = 0;
+            for (QStringList::const_iterator it = dirnames.constBegin(); it != dirnames.constEnd(); ++it) {
+                if (++i == 3)
+                    continue;
+                legacyPathPlugins = legacyPathPlugins + QString(*it) + pathSep;
+            }
+            if (QFile::exists(legacyPathPlugins)) {
+                legacyPathPlugins = QDir(legacyPathPlugins).canonicalPath();
+                if (!app_libpaths->contains(legacyPathPlugins))
+                    app_libpaths->append(legacyPathPlugins);
+            }
+        }
 #endif
 
         // If QCoreApplication is not yet instantiated,

@@ -136,6 +136,10 @@
 #define LUCENE_INT32_MAX_SHOULDBE 0x7FFFFFFFL
 #define LUCENE_UINT8_MAX_SHOULDBE 0xff
 
+#if defined(__GNU__)
+ #define PATH_MAX 4096
+#endif
+
 //maximum path length. only used for buffers that use fullpath.
 //anything else should use a dynamic length.
 #if defined(CL_MAX_PATH)

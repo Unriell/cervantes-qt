@@ -3,7 +3,9 @@ RESOURCES += states.qrc
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/animation/states
-sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS states.pro
+sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS states.pro \
+                accessories-dictionary.png akregator.png digikam.png \
+                help-browser.png k3b.png kchart.png
 sources.path = $$[QT_INSTALL_EXAMPLES]/animation/states
 INSTALLS += target sources
 

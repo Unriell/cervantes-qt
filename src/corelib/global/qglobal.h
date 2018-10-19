@@ -226,6 +226,8 @@ namespace QT_NAMESPACE {}
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 #  define Q_OS_FREEBSD
 #  define Q_OS_BSD4
+#elif defined(__FreeBSD_kernel__)
+#  define Q_OS_FREEBSD_KERNEL
 #elif defined(__NetBSD__)
 #  define Q_OS_NETBSD
 #  define Q_OS_BSD4

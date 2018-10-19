@@ -773,6 +773,11 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
         Q_ASSERT(id);
         XChangeWindowAttributes(dpy, id, CWOverrideRedirect | CWSaveUnder,
                                 &wsa);
+        XClassHint class_hint;
+        QByteArray appName = qAppName().toLatin1();
+        class_hint.res_name = appName.data(); // application name
+        class_hint.res_class = const_cast<char *>(QX11Info::appClass());   // application class
+        XSetWMProperties(dpy, id, 0, 0, 0, 0, 0, 0, &class_hint);
     } else if (topLevel && !desktop) {        // top-level widget
         if (!X11->wm_client_leader)
             create_wm_client_leader();
@@ -827,13 +832,21 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
         // set EWMH window types
         setNetWmWindowTypes();
 
+        // when we create a toplevel widget, the frame strut should be dirty
+        data.fstrut_dirty = 1;
+
+    } else {
+        // non-toplevel widgets don't have a frame, so no need to
+        // update the strut
+        data.fstrut_dirty = 0;
+    }
+
+    if (initializeWindow && (popup || (topLevel && !desktop))) { // properties set on all toplevel windows
         // set _NET_WM_PID
         long curr_pid = getpid();
         XChangeProperty(dpy, id, ATOM(_NET_WM_PID), XA_CARDINAL, 32, PropModeReplace,
                         (unsigned char *) &curr_pid, 1);
 
-        // when we create a toplevel widget, the frame strut should be dirty
-        data.fstrut_dirty = 1;
 
         // declare the widget's window role
         if (QTLWExtra *topData = maybeTopData()) {
@@ -849,10 +862,6 @@ void QWidgetPrivate::create_sys(WId window, bool initializeWindow, bool destroyO
         XChangeProperty(dpy, id, ATOM(WM_CLIENT_LEADER),
                         XA_WINDOW, 32, PropModeReplace,
                         (unsigned char *)&X11->wm_client_leader, 1);
-    } else {
-        // non-toplevel widgets don't have a frame, so no need to
-        // update the strut
-        data.fstrut_dirty = 0;
     }
 
     if (initializeWindow && q->internalWinId()) {

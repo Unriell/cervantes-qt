@@ -73,7 +73,7 @@ QT_BEGIN_NAMESPACE
 static bool isDebugging;
 #define qDBusDebug              if (!::isDebugging); else qDebug
 
-Q_GLOBAL_STATIC_WITH_ARGS(const QString, orgFreedesktopDBusString, (QLatin1String(DBUS_SERVICE_DBUS)))
+Q_GLOBAL_STATIC_WITH_ARGS(QString, orgFreedesktopDBusString, (QLatin1String(DBUS_SERVICE_DBUS)))
 
 static inline QString dbusServiceString()
 { return *orgFreedesktopDBusString(); }

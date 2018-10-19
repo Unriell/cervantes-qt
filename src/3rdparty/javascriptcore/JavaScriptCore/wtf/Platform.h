@@ -167,6 +167,15 @@
 #define WTF_CPU_BIG_ENDIAN 1
 #endif
 
+/* CPU(RISCV64) - RISC-V 64-bit */
+#if defined(__riscv)
+#if (__riscv_xlen == 64)
+#define WTF_CPU_RISCV64 1
+#elif (__riscv_xlen == 32)
+#define WTF_CPU_RISCV32 1
+#endif
+#endif
+
 /* CPU(SH4) - SuperH SH-4 */
 #if defined(__SH4__)
 #define WTF_CPU_SH4 1
@@ -189,6 +198,18 @@
 #define WTF_CPU_SPARC 1
 #endif
 
+/* CPU(S390X) - S390 64-bit */
+#if defined(__s390x__)
+#define WTF_CPU_S390X 1
+#define WTF_CPU_BIG_ENDIAN 1
+#endif
+
+/* CPU(S390) - S390 32-bit */
+#if defined(__s390__)
+#define WTF_CPU_S390 1
+#define WTF_CPU_BIG_ENDIAN 1
+#endif
+
 /* CPU(X86) - i386 / x86 32-bit */
 #if   defined(__i386__) \
     || defined(i386)     \
@@ -201,7 +222,11 @@
 /* CPU(X86_64) - AMD64 / Intel64 / x86_64 64-bit */
 #if   defined(__x86_64__) \
     || defined(_M_X64)
+#ifdef __ILP32__
+#define WTF_CPU_X86_64_32 1
+#else
 #define WTF_CPU_X86_64 1
+#endif
 #endif
 
 /* 64-bit mode on AIX */
@@ -423,7 +448,7 @@
 #endif
 
 /* OS(LINUX) - Linux */
-#ifdef __linux__
+#if defined(__linux__) || defined(__GLIBC__)
 #define WTF_OS_LINUX 1
 #endif
 
@@ -903,7 +928,7 @@
 #endif
 
 #if !defined(WTF_USE_JSVALUE64) && !defined(WTF_USE_JSVALUE32) && !defined(WTF_USE_JSVALUE32_64)
-#if (CPU(X86_64) && (OS(UNIX) || OS(WINDOWS) || OS(SOLARIS) || OS(HPUX))) || (CPU(IA64) && !CPU(IA64_32)) || CPU(ALPHA) || CPU(AIX64) || CPU(SPARC64) || CPU(MIPS64) || CPU(AARCH64)
+#if (CPU(X86_64) && (OS(UNIX) || OS(WINDOWS) || OS(SOLARIS) || OS(HPUX))) || (CPU(IA64) && !CPU(IA64_32)) || CPU(ALPHA) || CPU(AIX64) || CPU(SPARC64) || CPU(MIPS64) || CPU(AARCH64) || CPU(S390X) || CPU(RISCV64)
 #define WTF_USE_JSVALUE64 1
 #elif CPU(ARM) || CPU(PPC64)
 #define WTF_USE_JSVALUE32 1

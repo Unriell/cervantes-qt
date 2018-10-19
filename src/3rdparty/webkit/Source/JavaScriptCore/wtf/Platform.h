@@ -187,6 +187,15 @@
 #define WTF_CPU_BIG_ENDIAN 1
 #endif
 
+/* CPU(RISCV64) - RISC-V 64-bit */
+#if defined(__riscv)
+#if (__riscv_xlen == 64)
+#define WTF_CPU_RISCV64 1
+#elif (__riscv_xlen == 32)
+#define WTF_CPU_RISCV32 1
+#endif
+#endif
+
 /* CPU(SH4) - SuperH SH-4 */
 #if defined(__SH4__)
 #define WTF_CPU_SH4 1
@@ -427,7 +436,7 @@
 #endif
 
 /* OS(LINUX) - Linux */
-#ifdef __linux__
+#if defined(__linux__) || defined(__GLIBC__)
 #define WTF_OS_LINUX 1
 #endif
 
@@ -1000,6 +1009,7 @@
 #if (CPU(X86_64) && (OS(UNIX) || OS(WINDOWS))) \
     || (CPU(IA64) && !CPU(IA64_32)) \
     || CPU(ALPHA) \
+    || CPU(RISCV64) \
     || CPU(SPARC64) \
     || CPU(S390X) \
     || CPU(PPC64) \

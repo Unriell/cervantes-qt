@@ -3,7 +3,8 @@ RESOURCES = appchooser.qrc
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/animation/appchooser
-sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS appchooser.pro
+sources.files = $$SOURCES $$HEADERS $$RESOURCES $$FORMS appchooser.pro \
+                accessories-dictionary.png akregator.png digikam.png k3b.png
 sources.path = $$[QT_INSTALL_EXAMPLES]/animation/appchooser
 INSTALLS += target sources
 

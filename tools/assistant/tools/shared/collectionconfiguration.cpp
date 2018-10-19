@@ -282,7 +282,7 @@ const QDateTime CollectionConfiguration::lastRegisterTime(const QHelpEngineCore 
 
 void CollectionConfiguration::updateLastRegisterTime(QHelpEngineCore &helpEngine)
 {
-    helpEngine.setCustomValue(LastRegisterTime, QDateTime::currentDateTime());
+    helpEngine.setCustomValue(LastRegisterTime, QDateTime::fromString("2012-12-20T12:00:00Z", Qt::ISODate).toUTC());
 }
 
 bool CollectionConfiguration::isNewer(const QHelpEngineCore &newer,

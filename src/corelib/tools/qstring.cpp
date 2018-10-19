@@ -5560,6 +5560,11 @@ QString &QString::vsprintf(const char* cformat, va_list ap)
     return *this;
 }
 
+// va_list mangling has been changed in g++ 4.4
+// Add ABI compatibility hack for g++ 4.3 and below.
+#if defined __ARM_EABI__ && defined __GNUC__ && (__GNUC__ > 4 || __GNUC__ == 4 && __GNUC_MINOR__ >= 4)
+__asm__(".symver _ZN7QString8vsprintfEPKcSt9__va_list, _ZN7QString8vsprintfEPKcPv@@");
+#endif
 /*!
     Returns the string converted to a \c{long long} using base \a
     base, which is 10 by default and must be between 2 and 36, or 0.

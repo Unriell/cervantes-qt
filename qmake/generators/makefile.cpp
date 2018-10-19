@@ -2470,7 +2470,7 @@ MakefileGenerator::writeSubTargets(QTextStream &t, QList<MakefileGenerator::SubT
 
         QString mkfile = subtarget->makefile;
         if(!in_directory.isEmpty())
-            mkfile.prepend(out_directory);
+            mkfile.prepend(out_directory + Option::dir_sep);
 
         QString in_directory_cdin, in_directory_cdout, out_directory_cdin, out_directory_cdout;
 #define MAKE_CD_IN_AND_OUT(directory) \

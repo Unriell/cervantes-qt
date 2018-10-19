@@ -44,6 +44,8 @@ embedded: SUBDIRS += makeqpf
 
 !wince*:!cross_compile:SUBDIRS += qdoc3
 
+SUBDIRS += qvfb
+
 CONFIG+=ordered
 QTDIR_build:REQUIRES = "contains(QT_CONFIG, full-config)"
 

@@ -1031,6 +1031,11 @@ void QApplicationPrivate::initialize()
     q->setAttribute(Qt::AA_S60DisablePartialScreenInputMode);
 #endif
 
+    if(qgetenv("QT_USE_DRAG_DISTANCE").toInt() > 0) {
+        int dragThreshold = qgetenv("QT_USE_DRAG_DISTANCE").toInt();
+        q->setStartDragDistance(dragThreshold);
+    }
+
     if (qt_is_gui_used)
         initializeMultitouch();
 }

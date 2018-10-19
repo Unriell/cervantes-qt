@@ -35,7 +35,7 @@ $$unixstyle {
     EXAMPLESMANIFESTTARGET = $$replace(EXAMPLESMANIFESTTARGET,  "/", "\\")
     DEMOSMANIFESTTARGET = $$replace(DEMOSMANIFESTTARGET,  "/", "\\")
 }
-ADP_DOCS_QDOCCONF_FILE = qt-build-docs-online.qdocconf
+ADP_DOCS_QDOCCONF_FILE = qt-build-docs.qdocconf
 DITA_DOCS_QDOCCONF_FILE = qt-ditaxml.qdocconf
 QT_DOCUMENTATION = ($$QDOC qt-api-only.qdocconf assistant.qdocconf designer.qdocconf \
                     linguist.qdocconf qmake.qdocconf qdeclarative.qdocconf) && \

@@ -53,9 +53,6 @@ QT_MODULE(Core)
 class Q_CORE_EXPORT QBasicAtomicInt
 {
 public:
-#ifdef QT_ARCH_PARISC
-    int _q_lock[4];
-#endif
 #if defined(QT_ARCH_WINDOWS) || defined(QT_ARCH_WINDOWSCE)
     union { // needed for Q_BASIC_ATOMIC_INITIALIZER
         volatile long _q_value;
@@ -87,9 +84,6 @@ public:
 
     inline QBasicAtomicInt &operator=(int value)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         _q_value = value;
         return *this;
     }
@@ -131,9 +125,6 @@ template <typename T>
 class QBasicAtomicPointer
 {
 public:
-#ifdef QT_ARCH_PARISC
-    int _q_lock[4];
-#endif
 #if defined(QT_ARCH_WINDOWS) || defined(QT_ARCH_WINDOWSCE)
     union {
         T * volatile _q_value;
@@ -176,9 +167,6 @@ public:
 
     inline QBasicAtomicPointer<T> &operator=(T *value)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         _q_value = value;
         return *this;
     }
@@ -210,9 +198,7 @@ public:
     T *fetchAndAddOrdered(qptrdiff valueToAdd);
 };
 
-#ifdef QT_ARCH_PARISC
-#  define Q_BASIC_ATOMIC_INITIALIZER(a) {{-1,-1,-1,-1},(a)}
-#elif defined(QT_ARCH_WINDOWS) || defined(QT_ARCH_WINDOWSCE)
+#if defined(QT_ARCH_WINDOWS) || defined(QT_ARCH_WINDOWSCE)
 #  define Q_BASIC_ATOMIC_INITIALIZER(a) { {(a)} }
 #else
 #  define Q_BASIC_ATOMIC_INITIALIZER(a) { (a) }

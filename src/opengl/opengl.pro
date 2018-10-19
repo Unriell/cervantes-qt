@@ -39,6 +39,7 @@ SOURCES += qgl.cpp \
            qglpaintdevice.cpp \
            qglbuffer.cpp \
 
+QMAKE_CXXFLAGS_HIDESYMS -= -fvisibility-inlines-hidden
 
 !contains(QT_CONFIG, opengles2) {
     HEADERS += qpaintengine_opengl_p.h

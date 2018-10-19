@@ -523,7 +523,7 @@ Q_INLINE_TEMPLATE void QHash<Key, T>::deleteNode2(QHashData::Node *node)
 }
 
 template <class Key, class T>
-Q_INLINE_TEMPLATE void QHash<Key, T>::duplicateNode(QHashData::Node *node, void *newNode)
+void QHash<Key, T>::duplicateNode(QHashData::Node *node, void *newNode)
 {
     Node *concreteNode = concrete(node);
     if (QTypeInfo<T>::isDummy) {

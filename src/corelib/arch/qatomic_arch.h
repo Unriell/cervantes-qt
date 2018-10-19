@@ -76,6 +76,8 @@ QT_BEGIN_HEADER
 #  include "QtCore/qatomic_parisc.h"
 #elif defined(QT_ARCH_POWERPC)
 #  include "QtCore/qatomic_powerpc.h"
+#elif defined(QT_ARCH_RISCV64)
+#  include "QtCore/qatomic_generic.h"
 #elif defined(QT_ARCH_S390)
 #  include "QtCore/qatomic_s390.h"
 #elif defined(QT_ARCH_SPARC)
@@ -92,8 +94,12 @@ QT_BEGIN_HEADER
 #  include "QtCore/qatomic_sh.h"
 #elif defined(QT_ARCH_SH4A)
 #  include "QtCore/qatomic_sh4a.h"
+#elif defined(QT_ARCH_X32)
+#  include "QtCore/qatomic_i386.h"
 #elif defined(QT_ARCH_NACL)
 #  include "QtCore/qatomic_generic.h"
+#elif defined(QT_ARCH_AARCH64)
+#  include "QtCore/qatomic_aarch64.h"
 #else
 #  error "Qt has not been ported to this architecture"
 #endif

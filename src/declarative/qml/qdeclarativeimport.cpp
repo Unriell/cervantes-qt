@@ -770,6 +770,22 @@ QDeclarativeImportDatabase::QDeclarativeImportDatabase(QDeclarativeEngine *e)
         addImportPath(installImportsPath);
     }
 #else
+    QStringList dirnames = installImportsPath.split(QLatin1Char('/'), QString::SkipEmptyParts);
+    if (dirnames[0] == QLatin1String("usr") && dirnames[1] == QLatin1String("lib") && dirnames[3] == QLatin1String("qt4"))
+    {
+        QString pathSep("/");
+        QString legacyImportPath = pathSep;
+        int i = 0;
+        for (QStringList::const_iterator it = dirnames.constBegin(); it != dirnames.constEnd(); ++it) {
+            if (++i == 3)
+                continue;
+            legacyImportPath = legacyImportPath + *it + pathSep;
+        }
+        if (QFile::exists(legacyImportPath)) {
+            addImportPath(legacyImportPath);
+        }
+    }
+
     addImportPath(installImportsPath);
 #endif
 

@@ -101,41 +101,19 @@ template <typename T>
 Q_INLINE_TEMPLATE bool QBasicAtomicPointer<T>::isFetchAndAddWaitFree()
 { return false; }
 
-extern "C" {
-    Q_CORE_EXPORT void q_atomic_lock(int *lock);
-    Q_CORE_EXPORT void q_atomic_unlock(int *lock);
-}
-
-// Reference counting
-
 inline bool QBasicAtomicInt::ref()
 {
-    q_atomic_lock(_q_lock);
-    bool ret = (++_q_value != 0);
-    q_atomic_unlock(_q_lock);
-    return ret;
+    return __sync_add_and_fetch(&_q_value, 1);
 }
 
 inline bool QBasicAtomicInt::deref()
 {
-    q_atomic_lock(_q_lock);
-    bool ret = (--_q_value != 0);
-    q_atomic_unlock(_q_lock);
-    return ret;
+    return __sync_sub_and_fetch(&_q_value, 1);
 }
-
-// Test-and-set for integers
 
 inline bool QBasicAtomicInt::testAndSetOrdered(int expectedValue, int newValue)
 {
-    q_atomic_lock(_q_lock);
-    if (_q_value == expectedValue) {
-        _q_value = newValue;
-        q_atomic_unlock(_q_lock);
-        return true;
-    }
-    q_atomic_unlock(_q_lock);
-    return false;
+    return __sync_bool_compare_and_swap(&_q_value, expectedValue, newValue);
 }
 
 inline bool QBasicAtomicInt::testAndSetRelaxed(int expectedValue, int newValue)
@@ -153,15 +131,9 @@ inline bool QBasicAtomicInt::testAndSetRelease(int expectedValue, int newValue)
     return testAndSetOrdered(expectedValue, newValue);
 }
 
-// Fetch-and-store for integers
-
 inline int QBasicAtomicInt::fetchAndStoreOrdered(int newValue)
 {
-    q_atomic_lock(_q_lock);
-    int returnValue = _q_value;
-    _q_value = newValue;
-    q_atomic_unlock(_q_lock);
-    return returnValue;
+    return __sync_lock_test_and_set(&_q_value, newValue);
 }
 
 inline int QBasicAtomicInt::fetchAndStoreRelaxed(int newValue)
@@ -179,15 +151,9 @@ inline int QBasicAtomicInt::fetchAndStoreRelease(int newValue)
     return fetchAndStoreOrdered(newValue);
 }
 
-// Fetch-and-add for integers
-
 inline int QBasicAtomicInt::fetchAndAddOrdered(int valueToAdd)
 {
-    q_atomic_lock(_q_lock);
-    int originalValue = _q_value;
-    _q_value += valueToAdd;
-    q_atomic_unlock(_q_lock);
-    return originalValue;
+    return __sync_fetch_and_add(&_q_value, valueToAdd);
 }
 
 inline int QBasicAtomicInt::fetchAndAddRelaxed(int valueToAdd)
@@ -205,19 +171,10 @@ inline int QBasicAtomicInt::fetchAndAddRelease(int valueToAdd)
     return fetchAndAddOrdered(valueToAdd);
 }
 
-// Test and set for pointers
-
 template <typename T>
 Q_INLINE_TEMPLATE bool QBasicAtomicPointer<T>::testAndSetOrdered(T *expectedValue, T *newValue)
 {
-    q_atomic_lock(_q_lock);
-    if (_q_value == expectedValue) {
-        _q_value = newValue;
-        q_atomic_unlock(_q_lock);
-        return true;
-    }
-    q_atomic_unlock(_q_lock);
-    return false;
+    return __sync_bool_compare_and_swap(&_q_value, expectedValue, newValue);
 }
 
 template <typename T>
@@ -238,16 +195,10 @@ Q_INLINE_TEMPLATE bool QBasicAtomicPointer<T>::testAndSetRelease(T *expectedValu
     return testAndSetOrdered(expectedValue, newValue);
 }
 
-// Fetch and store for pointers
-
 template <typename T>
 Q_INLINE_TEMPLATE T *QBasicAtomicPointer<T>::fetchAndStoreOrdered(T *newValue)
 {
-    q_atomic_lock(_q_lock);
-    T *returnValue = (_q_value);
-    _q_value = newValue;
-    q_atomic_unlock(_q_lock);
-    return returnValue;
+    return __sync_lock_test_and_set(&_q_value, newValue);
 }
 
 template <typename T>
@@ -268,16 +219,10 @@ Q_INLINE_TEMPLATE T *QBasicAtomicPointer<T>::fetchAndStoreRelease(T *newValue)
     return fetchAndStoreOrdered(newValue);
 }
 
-// Fetch and add for pointers
-
 template <typename T>
 Q_INLINE_TEMPLATE T *QBasicAtomicPointer<T>::fetchAndAddOrdered(qptrdiff valueToAdd)
 {
-    q_atomic_lock(_q_lock);
-    T *returnValue = (_q_value);
-    _q_value += valueToAdd;
-    q_atomic_unlock(_q_lock);
-    return returnValue;
+    return __sync_fetch_and_add(&_q_value, valueToAdd * sizeof(T));
 }
 
 template <typename T>

@@ -85,18 +85,20 @@ class QLibraryInfoPrivate
 {
 public:
     static QSettings *findConfiguration();
-    static void cleanup()
-    {
-        QLibrarySettings *ls = qt_library_settings();
-        if (ls)
-            ls->settings.reset(0);
-    }
+    static void cleanup();
     static QSettings *configuration()
     {
         QLibrarySettings *ls = qt_library_settings();
         return ls ? ls->settings.data() : 0;
     }
 };
+
+void QLibraryInfoPrivate::cleanup()
+{
+    QLibrarySettings *ls = qt_library_settings();
+    if (ls)
+        ls->settings.reset(0);
+}
 
 QLibrarySettings::QLibrarySettings()
     : settings(QLibraryInfoPrivate::findConfiguration())

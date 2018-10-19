@@ -266,8 +266,6 @@ contains(DEFINES, ENABLE_WEBGL=1)|contains(CONFIG, texmap) {
 
 !CONFIG(webkit-debug):CONFIG(QTDIR_build) {
     # Remove the following 2 lines if you want debug information in WebCore
-    CONFIG -= separate_debug_info
-    CONFIG += no_debug_info
 }
 
 contains (CONFIG, text_breaking_with_icu) {
@@ -319,7 +317,7 @@ mac {
 }
 
 unix:!mac:*-g++*:QMAKE_CXXFLAGS += -ffunction-sections -fdata-sections
-unix:!mac:*-g++*:QMAKE_LFLAGS += -Wl,--gc-sections
+unix:!mac:*-g++*:!equals(QT_ARCH, powerpc):!equals(QT_ARCH, s390):!equals(QT_ARCH, mips):!equals(QT_ARCH, arm):QMAKE_LFLAGS += -Wl,--gc-sections
 linux*-g++*:QMAKE_LFLAGS += $$QMAKE_LFLAGS_NOUNDEF
 
 unix|win32-g++*:QMAKE_PKGCONFIG_REQUIRES = QtCore QtGui QtNetwork

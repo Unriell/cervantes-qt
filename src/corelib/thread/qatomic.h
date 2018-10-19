@@ -57,16 +57,10 @@ class Q_CORE_EXPORT QAtomicInt : public QBasicAtomicInt
 public:
     inline QAtomicInt(int value = 0)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         _q_value = value;
     }
     inline QAtomicInt(const QAtomicInt &other)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         _q_value = other._q_value;
     }
 
@@ -127,16 +121,10 @@ class QAtomicPointer : public QBasicAtomicPointer<T>
 public:
     inline QAtomicPointer(T *value = 0)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         QBasicAtomicPointer<T>::_q_value = value;
     }
     inline QAtomicPointer(const QAtomicPointer<T> &other)
     {
-#ifdef QT_ARCH_PARISC
-        this->_q_lock[0] = this->_q_lock[1] = this->_q_lock[2] = this->_q_lock[3] = -1;
-#endif
         QBasicAtomicPointer<T>::_q_value = other._q_value;
     }
 
